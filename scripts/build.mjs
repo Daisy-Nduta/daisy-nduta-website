@@ -446,10 +446,14 @@ ${culturalCards.map(itemCard).join('\n')}
     );
 
     // ---- index.html ----
+    // The 5 entry cards auto-rotate through a single focal position, rather
+    // than sitting in a static grid -- client-requested, referencing another
+    // site's 3D card carousel but scoped down to a flat rotation using this
+    // site's existing card markup/visual system (see AGENTS.md).
     const home = readJson('pages/home.json');
     const entryCards = home.cards
         .map(
-            card => `      <a class="entry-card" href="${card.href}">
+            (card, i) => `        <a class="entry-card" href="${card.href}" data-index="${i}">
         ${mediaBlock('entry-card__media', card.image, card.title)}
         <div class="entry-card__body">
           <p class="label">${escapeHtml(card.label)}</p>
@@ -461,14 +465,27 @@ ${culturalCards.map(itemCard).join('\n')}
         )
         .join('\n');
 
+    const entryDots = home.cards
+        .map((card, i) => `        <button type="button" class="entry-carousel__dot" data-index="${i}" aria-label="Show ${escapeHtml(card.title)}"></button>`)
+        .join('\n');
+
     write(
         'index.html',
         head('Daisy Nduta', 'Daisy Nduta — Nairobi-based sound designer, location recordist, and cultural producer.') +
             `<body>
   <main class="page page--home">
     <h1 class="home-wordmark">Daisy Nduta</h1>
-    <section class="entry-grid" aria-label="Explore the work">
+    <section class="entry-carousel" aria-roledescription="carousel" aria-label="Explore the work">
+      <div class="entry-carousel__track">
 ${entryCards}
+      </div>
+      <div class="entry-carousel__controls">
+        <button type="button" class="entry-carousel__arrow entry-carousel__arrow--prev" aria-label="Previous">←</button>
+        <div class="entry-carousel__dots">
+${entryDots}
+        </div>
+        <button type="button" class="entry-carousel__arrow entry-carousel__arrow--next" aria-label="Next">→</button>
+      </div>
     </section>
     ${FOOTER}
   </main>

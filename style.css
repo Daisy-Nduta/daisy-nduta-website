@@ -101,15 +101,11 @@ h1.hero-lede {
     line-height: 1.08;
 }
 
-.intro-grid, .entry-grid {
+.intro-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 32px;
 }
-
-.entry-grid { gap: 40px; }
-.entry-grid .entry-card:nth-child(5) { grid-column: 1 / -1; }
-.entry-grid .entry-card:nth-child(5) .entry-card__media { aspect-ratio: 21 / 9; }
 
 .copy {
     max-width: 570px;
@@ -170,6 +166,53 @@ h1.hero-lede {
 .entry-card p:not(.label) { margin-bottom: 0; max-width: 460px; color: rgba(32, 30, 31, .68); font-size: 16px; line-height: 1.3; }
 .entry-card__arrow { position: absolute; right: 26px; bottom: 26px; font-size: 24px; }
 
+.entry-carousel { margin-top: 24px; }
+.entry-carousel__track {
+    position: relative;
+    height: 560px;
+    overflow: hidden;
+}
+.entry-carousel .entry-card {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: min(560px, 86%);
+    height: 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .entry-carousel .entry-card { transition: transform .6s cubic-bezier(.22, 1, .36, 1), opacity .6s ease; }
+}
+.entry-carousel .entry-card__media { aspect-ratio: 4 / 3; }
+.entry-carousel__controls { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 32px; }
+.entry-carousel__arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(32, 30, 31, .2);
+    border-radius: 50%;
+    background: none;
+    font-family: inherit;
+    font-size: 18px;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color .2s ease, color .2s ease;
+}
+.entry-carousel__arrow:hover { border-color: #a22106; color: #a22106; }
+.entry-carousel__dots { display: flex; gap: 10px; }
+.entry-carousel__dot {
+    width: 9px;
+    height: 9px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(32, 30, 31, .22);
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+}
+.entry-carousel__dot[aria-current="true"] { background: #a22106; transform: scale(1.3); }
+
 .item-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 8px; }
 .item-card {
     position: relative;
@@ -218,9 +261,12 @@ h1.hero-lede {
     .page { width: min(100% - 36px, 1200px); margin-top: 9vh; }
     .page--home { margin-top: 10vh; }
     .home-wordmark { font-size: clamp(40px, 14vw, 72px); margin-bottom: 40px; }
-    .intro-grid, .entry-grid, .item-grid { grid-template-columns: 1fr; gap: 24px; }
+    .intro-grid, .item-grid { grid-template-columns: 1fr; gap: 24px; }
     .image-panel, .image-panel img { min-height: 250px; }
     .section { margin-top: 64px; }
     .detail-list li { grid-template-columns: 1fr; gap: 7px; }
     h1.hero-lede { font-size: clamp(26px, 7vw, 38px); }
+    .entry-carousel__track { height: 460px; }
+    .entry-carousel .entry-card { width: 92%; }
+    .entry-carousel__controls { gap: 16px; margin-top: 24px; }
 }

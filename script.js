@@ -298,3 +298,89 @@
     resize();
     requestAnimationFrame(draw);
 })();
+
+/*
+ * Home's entry cards auto-rotate through a single focal position instead of
+ * sitting in a static grid (client-requested). No-ops on every other page,
+ * since .entry-carousel only exists on index.html.
+ */
+(() => {
+    const carousel = document.querySelector('.entry-carousel');
+    if (!carousel) return;
+
+    const track = carousel.querySelector('.entry-carousel__track');
+    const cards = Array.from(track.querySelectorAll('.entry-card'));
+    const dots = Array.from(carousel.querySelectorAll('.entry-carousel__dot'));
+    const prevBtn = carousel.querySelector('.entry-carousel__arrow--prev');
+    const nextBtn = carousel.querySelector('.entry-carousel__arrow--next');
+    const total = cards.length;
+    if (total < 2) return;
+
+    const AUTOPLAY_MS = 4500;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let active = 0;
+    let timer = null;
+
+    function render() {
+        cards.forEach((card, i) => {
+            let delta = i - active;
+            if (delta > total / 2) delta -= total;
+            if (delta < -total / 2) delta += total;
+
+            const abs = Math.abs(delta);
+            const scale = abs === 0 ? 1 : abs === 1 ? .82 : .68;
+            const opacity = abs === 0 ? 1 : abs === 1 ? .65 : .3;
+
+            card.style.transform = `translate(calc(-50% + ${delta * 58}%), 0) scale(${scale})`;
+            card.style.opacity = String(opacity);
+            card.style.zIndex = String(10 - abs);
+            card.setAttribute('aria-hidden', abs === 0 ? 'false' : 'true');
+            card.tabIndex = abs === 0 ? 0 : -1;
+        });
+        dots.forEach((dot, i) => dot.setAttribute('aria-current', String(i === active)));
+    }
+
+    function goTo(index) {
+        active = ((index % total) + total) % total;
+        render();
+    }
+
+    function next() { goTo(active + 1); }
+    function prev() { goTo(active - 1); }
+
+    function stopAutoplay() {
+        if (timer) clearInterval(timer);
+        timer = null;
+    }
+    function startAutoplay() {
+        if (reduceMotion) return;
+        stopAutoplay();
+        timer = setInterval(next, AUTOPLAY_MS);
+    }
+
+    prevBtn.addEventListener('click', () => { prev(); startAutoplay(); });
+    nextBtn.addEventListener('click', () => { next(); startAutoplay(); });
+    dots.forEach((dot, i) => dot.addEventListener('click', () => { goTo(i); startAutoplay(); }));
+
+    // A peeking (non-active) card brings itself into focus on click rather
+    // than navigating away immediately -- only the centered card's link
+    // actually leaves the page.
+    cards.forEach((card, i) => {
+        card.addEventListener('click', event => {
+            if (i !== active) {
+                event.preventDefault();
+                goTo(i);
+                startAutoplay();
+            }
+        });
+    });
+
+    carousel.addEventListener('mouseenter', stopAutoplay);
+    carousel.addEventListener('mouseleave', startAutoplay);
+    carousel.addEventListener('focusin', stopAutoplay);
+    carousel.addEventListener('focusout', startAutoplay);
+
+    render();
+    startAutoplay();
+})();
