@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Publish — Daisy Nduta</title>
+  <link rel="icon" href="images/favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: #201e1f;
+      font-family: "Futura", "Futura PT", "Century Gothic", sans-serif;
+    }
+    .card {
+      width: min(560px, calc(100% - 48px));
+      padding: 40px;
+      border: 1px solid rgba(32, 30, 31, .15);
+      border-radius: 12px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, .06);
+    }
+    p.eyebrow {
+      margin: 0 0 16px;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(32, 30, 31, .68);
+    }
+    h1 {
+      margin: 0 0 20px;
+      font-family: "Anton", Impact, sans-serif;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: -.01em;
+      font-size: clamp(28px, 5vw, 38px);
+      line-height: .95;
+    }
+    p.lede { margin: 0 0 28px; color: rgba(32, 30, 31, .68); line-height: 1.4; font-size: 16px; }
+    button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #a22106;
+      color: #fff;
+      font-family: "Anton", Impact, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .5; cursor: default; }
+    button:not(:disabled):hover { opacity: .85; }
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      display: none;
+    }
+    .status.ok { display: block; background: rgba(30, 130, 76, .1); color: #1e824c; }
+    .status.err { display: block; background: rgba(200, 60, 60, .1); color: #b23b3b; }
+    a.back {
+      display: inline-block;
+      margin-top: 24px;
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+      font-size: 12px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    a.back:hover { opacity: .6; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p class="eyebrow">Daisy Nduta — Content Manager</p>
+    <h1>Publish your changes</h1>
+    <p class="lede">This sends everything you've saved in the Content Manager to GitHub. Your live site updates automatically a minute or two after that.</p>
+    <button id="publish-btn" type="button">Publish to GitHub</button>
+    <div class="status" id="status"></div>
+    <a class="back" href="/admin/">← Back to Content Manager</a>
+  </div>
+  <script>
+    const button = document.getElementById('publish-btn');
+    const status = document.getElementById('status');
+
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      button.textContent = 'Publishing…';
+      status.className = 'status';
+      status.textContent = '';
+
+      try {
+        const response = await fetch('/api/publish', { method: 'POST' });
+        const data = await response.json();
+
+        if (data.success) {
+          status.className = 'status ok';
+          status.textContent = 'Published! ' + (data.output || '');
+        } else {
+          status.className = 'status err';
+          status.textContent = 'Something went wrong (' + data.step + '):\n' + data.output + (data.hint ? '\n\n' + data.hint : '');
+        }
+      } catch (error) {
+        status.className = 'status err';
+        status.textContent = 'Could not reach the local server: ' + error.message;
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Publish to GitHub';
+      }
+    });
+  </script>
+</body>
+</html>

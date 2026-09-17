@@ -1,0 +1,11 @@
+{
+  "eyebrow": "Contact",
+  "heading": "Let's talk.",
+  "intro": "For bookings, collaborations, or a first conversation, get in touch.",
+  "reachLabel": "Reach Daisy",
+  "reachHeading": "Contact details",
+  "details": [
+    { "label": "Email", "linkText": "hello@daisynduta.com", "href": "#", "note": "(to be confirmed)" },
+    { "label": "Instagram", "linkText": "@daisynduta", "href": "#", "note": "(link to be confirmed — e.g. for DJ work)" }
+  ]
+}

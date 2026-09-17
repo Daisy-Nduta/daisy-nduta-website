@@ -1,0 +1,44 @@
+{
+  "cards": [
+    {
+      "key": "sound",
+      "label": "01 — Sound",
+      "title": "Sound",
+      "summary": "Sound design, location recording, and audio engineering across film, theatre, broadcast, live, and studio work.",
+      "href": "sound.html",
+      "image": ""
+    },
+    {
+      "key": "curation",
+      "label": "02 — Curation & Production",
+      "title": "Curation & Production",
+      "summary": "Producing, programming, and curating live experiences — from venue seasons to festival showcases.",
+      "href": "curation-production.html",
+      "image": ""
+    },
+    {
+      "key": "cultural",
+      "label": "03 — Cultural Projects",
+      "title": "Cultural Projects",
+      "summary": "Longer-term, multidisciplinary, and community-rooted work.",
+      "href": "cultural-projects.html",
+      "image": ""
+    },
+    {
+      "key": "about",
+      "label": "04 — About",
+      "title": "About",
+      "summary": "A closer look at the work — bio, awards, residencies, and selected clients.",
+      "href": "about.html",
+      "image": ""
+    },
+    {
+      "key": "contact",
+      "label": "05 — Contact",
+      "title": "Contact",
+      "summary": "For bookings, collaborations, or a first conversation.",
+      "href": "contact.html",
+      "image": ""
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "daisy-nduta-site",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Static site + local CMS for Daisy Nduta's portfolio. See AGENTS.md.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "cms": "node server.mjs"
+  },
+  "dependencies": {
+    "chokidar": "^5.0.0",
+    "express": "^5.2.1",
+    "gray-matter": "^4.0.3",
+    "multer": "^2.4.0",
+    "sharp": "^0.35.4"
+  }
+}
