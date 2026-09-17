@@ -1,0 +1,146 @@
+* { box-sizing: border-box; }
+
+html { min-height: 100%; }
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    color: #201e1f;
+    background: #fff;
+    font-family: "Anton", Impact, sans-serif;
+}
+
+#topographic {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: .42;
+}
+
+.site-header {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 52px 32px;
+}
+
+.site-title { display: block; width: 170px; line-height: 0; }
+.site-title img { display: block; width: 100%; height: auto; }
+
+.site-nav { display: flex; flex-wrap: wrap; gap: 28px; padding-top: 20px; }
+.site-nav a {
+    color: inherit;
+    font-size: 26px;
+    letter-spacing: .06em;
+    text-decoration: none;
+    text-transform: uppercase;
+    opacity: .6;
+}
+.site-nav a:hover, .site-nav a[aria-current="page"] { opacity: 1; }
+
+.page {
+    position: relative;
+    z-index: 1;
+    width: min(1200px, calc(100% - 64px));
+    margin: 5vh auto 0;
+    padding: 0 0 64px;
+}
+
+.eyebrow, .label {
+    margin: 0 0 16px;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(32, 30, 31, .68);
+}
+
+h1, h2, p { margin-top: 0; }
+h1 {
+    max-width: 900px;
+    margin-bottom: 58px;
+    font-size: clamp(52px, 10vw, 142px);
+    font-weight: 400;
+    line-height: .83;
+    letter-spacing: -.02em;
+    text-transform: uppercase;
+}
+
+.intro-grid, .partners-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+}
+
+.copy {
+    max-width: 570px;
+    font-size: clamp(21px, 2.2vw, 31px);
+    line-height: 1.15;
+    color: rgba(32, 30, 31, .68);
+}
+.copy + .copy { margin-top: 24px; }
+
+.image-panel, .partner-card {
+    overflow: hidden;
+    border: 1px solid rgba(32, 30, 31, .12);
+    border-radius: 12px;
+    background: #fff0e7;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, .08);
+}
+.image-panel img { display: block; width: 100%; height: 100%; min-height: 390px; object-fit: cover; }
+
+.section { margin-top: 96px; }
+.section h2 { margin-bottom: 24px; font-size: clamp(34px, 4.5vw, 68px); font-weight: 400; line-height: .9; }
+.detail-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid rgba(32, 30, 31, .2); }
+.detail-list li { display: grid; grid-template-columns: minmax(130px, .4fr) 1fr; gap: 24px; padding: 17px 0; border-bottom: 1px solid rgba(32, 30, 31, .2); color: rgba(32, 30, 31, .68); font-size: 18px; }
+.detail-list span:first-child { font-family: "Anton", Impact, sans-serif; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+
+.partner-card { min-height: 260px; padding: 26px; display: flex; flex-direction: column; justify-content: flex-start; background: #fff; }
+.partner-card .label { margin-bottom: 24px; }
+.partner-card h2 { margin-bottom: 18px; font-size: clamp(30px, 3vw, 48px); font-weight: 400; line-height: .9; text-transform: uppercase; }
+.partner-card p { margin-bottom: 0; max-width: 380px; color: rgba(32, 30, 31, .68); font-size: 16px; line-height: 1.15; }
+.placeholder { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; }
+.page-footer { margin-top: 90px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .58; }
+
+.projects-page { margin-top: 3vh; }
+.project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.archive-card { color: inherit; text-decoration: none; display: block; overflow: hidden; border: 1px solid rgba(32, 30, 31, .12); border-radius: 12px; background: #fff; box-shadow: 0 18px 45px rgba(0, 0, 0, .08); }
+.archive-card img { display: block; width: 100%; aspect-ratio: 1.16 / 1; object-fit: cover; transition: transform .6s ease; }
+.archive-card:hover img { transform: scale(1.035); }
+.archive-card__meta { display: flex; justify-content: space-between; gap: 16px; padding: 18px 20px; }
+.archive-card h2 { margin: 0; font-size: clamp(26px, 3vw, 46px); font-weight: 400; line-height: .9; text-transform: uppercase; }
+.archive-card__meta p { margin: 6px 0 0; color: rgba(32, 30, 31, .68); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.archive-card__arrow { font-size: 24px; }
+
+.project-page { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); column-gap: 48px; row-gap: 0; margin-top: 3vh; }
+.project-page > .eyebrow, .project-navigation { grid-column: 1 / -1; }
+.project-hero { display: contents; }
+.project-hero h1 { grid-column: 2; grid-row: 2; align-self: start; margin-bottom: 0; }
+.project-hero__image { grid-column: 1; grid-row: 2 / span 2; overflow: hidden; border-radius: 12px; }
+.project-hero__image img { display: block; width: 100%; aspect-ratio: 1.16 / 1; object-fit: cover; }
+.project-description { grid-column: 2; grid-row: 3; max-width: 750px; margin-top: 34px; }
+.project-navigation { display: flex; justify-content: space-between; gap: 24px; margin-top: 68px; padding-top: 20px; border-top: 1px solid rgba(32, 30, 31, .2); }
+.project-navigation a { color: inherit; font-size: 13px; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; }
+.project-navigation a:hover { text-decoration: underline; }
+
+@media (max-width: 700px) {
+    .site-header { align-items: flex-start; padding: 30px 18px; }
+    .site-title { width: 110px; }
+    .site-nav { justify-content: flex-end; gap: 12px; padding-top: 10px; }
+    .site-nav a { font-size: 15px; }
+    .page { width: min(100% - 36px, 1200px); margin-top: 9vh; }
+    .intro-grid, .partners-grid { grid-template-columns: 1fr; gap: 24px; }
+    .project-grid, .project-hero { grid-template-columns: 1fr; }
+    .projects-page, .project-page { margin-top: 7vh; }
+    .project-page { display: block; }
+    .project-hero { display: grid; }
+    .project-hero h1, .project-hero__image, .project-description { grid-column: auto; grid-row: auto; }
+    .project-description { margin-top: 40px; }
+    .image-panel img { min-height: 250px; }
+    .section { margin-top: 64px; }
+    .detail-list li { grid-template-columns: 1fr; gap: 7px; }
+}
