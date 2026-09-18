@@ -435,6 +435,7 @@
     // bounded, and it's recomputed fresh every render from the unbounded
     // `active`, so it can't drift no matter how many steps have happened.
     function next() { active += 1; render(); }
+    function prev() { active -= 1; render(); }
 
     // Only a direct jump (a dot or a visible-but-not-front card) needs to
     // land on a specific logical index -- take the shortest path there
@@ -478,6 +479,52 @@
     carousel.addEventListener('mouseleave', startAutoplay);
     carousel.addEventListener('focusin', stopAutoplay);
     carousel.addEventListener('focusout', startAutoplay);
+
+    // Touchscreen swipe -- a plain start/end delta, not a live drag (mobile
+    // deliberately has no positional motion to drag, see the crossfade note
+    // above), so a swipe just triggers one next()/prev() step like a click
+    // would. Only acts on a clearly-horizontal gesture past a small
+    // threshold, so an ordinary vertical scroll through the carousel isn't
+    // swallowed as a card change.
+    const SWIPE_THRESHOLD = 40;
+    let touchStartX = null;
+    let touchStartY = null;
+    carousel.addEventListener('touchstart', event => {
+        const touch = event.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        stopAutoplay();
+    }, { passive: true });
+    carousel.addEventListener('touchend', event => {
+        if (touchStartX === null) return;
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - touchStartX;
+        const dy = touch.clientY - touchStartY;
+        touchStartX = null;
+        if (Math.abs(dx) >= SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+            if (dx < 0) next(); else prev();
+        }
+        startAutoplay();
+    });
+
+    // Trackpad horizontal swipe -- trackpads report a two-finger horizontal
+    // swipe as a `wheel` event with a dominant deltaX, not a touch event.
+    // One continuous gesture fires many wheel events, so a short cooldown
+    // turns that into a single step instead of racing through several
+    // cards per swipe. Only claims events that are clearly horizontal
+    // (|deltaX| > |deltaY|), so normal vertical page-scrolling over the
+    // carousel is left completely alone.
+    let wheelCooldown = false;
+    carousel.addEventListener('wheel', event => {
+        if (Math.abs(event.deltaX) <= Math.abs(event.deltaY) || Math.abs(event.deltaX) < 12) return;
+        event.preventDefault();
+        if (wheelCooldown) return;
+        wheelCooldown = true;
+        stopAutoplay();
+        if (event.deltaX > 0) next(); else prev();
+        startAutoplay();
+        setTimeout(() => { wheelCooldown = false; }, 500);
+    }, { passive: false });
 
     // Re-render on crossing the mobile breakpoint (resize, device rotation)
     // so the transform style (fan vs. crossfade) always matches the CSS
