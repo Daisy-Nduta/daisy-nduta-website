@@ -46,6 +46,15 @@ const SOUND_SUBSECTIONS = [
     ['studio', 'Studio']
 ];
 
+// The card "go to" arrow used to be a plain "↗" character. Some mobile
+// browsers substitute an unrelated character (or their own default glyph,
+// e.g. a generic blue icon) for arrow symbols instead of using the site's
+// own type/colors -- an inline SVG with stroke="currentColor" always
+// renders identically and always tracks the element's own CSS color
+// (including the accent-on-hover rules), regardless of platform/font.
+const ARROW_ICON =
+    '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>';
+
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -187,7 +196,7 @@ function itemCard(item) {
           <h3>${accentLastWord(item.title)}</h3>
           <p class="item-card__meta">${escapeHtml(item.cardSummary)}</p>
         </div>
-        <span class="item-card__arrow" aria-hidden="true">↗</span>
+        <span class="item-card__arrow" aria-hidden="true">${ARROW_ICON}</span>
       </a>`;
 }
 
@@ -462,7 +471,7 @@ ${culturalCards.map(itemCard).join('\n')}
           <h2>${accentLastWord(card.title)}</h2>
           <p>${escapeHtml(card.summary)}</p>
         </div>
-        <span class="entry-card__arrow" aria-hidden="true">↗</span>
+        <span class="entry-card__arrow" aria-hidden="true">${ARROW_ICON}</span>
       </a>`
         )
         .join('\n');
