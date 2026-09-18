@@ -144,7 +144,6 @@ body {
 
 .field { margin-bottom: 22px; max-width: 640px; }
 .field__label { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: rgba(32, 30, 31, .55); margin-bottom: 7px; }
-.field__hint { font-size: 11px; color: rgba(32, 30, 31, .4); margin-top: 5px; }
 .field input[type="text"], .field input[type="number"], .field textarea {
     width: 100%;
     padding: 10px 12px;

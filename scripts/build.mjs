@@ -154,7 +154,7 @@ function header(currentHref) {
         return `      <a href="${href}"${current}>${escapeHtml(label)}</a>`;
     }).join('\n');
     return `<header class="site-header">
-    <a class="site-title" href="index.html" aria-label="Daisy Nduta home">Daisy Nduta</a>
+    <a class="site-title" href="index.html" aria-label="Daisy Nduta home">Daisy<br>${accentFull('Nduta')}</a>
     <nav class="site-nav" aria-label="Primary navigation">
 ${links}
     </nav>
@@ -533,7 +533,7 @@ ${paragraphs}
     <section class="section" aria-labelledby="awards">
       <p class="label">${escapeHtml(about.awardsLabel)}</p>
       <h2 id="awards">${accentFull(about.awardsHeading)}</h2>
-      <ul class="detail-list">
+      <ul class="detail-list detail-list--columns">
 ${awardsRows}
       </ul>
     </section>
@@ -541,7 +541,7 @@ ${awardsRows}
     <section class="section" aria-labelledby="residencies">
       <p class="label">${escapeHtml(about.residenciesLabel)}</p>
       <h2 id="residencies">${accentFull(about.residenciesHeading)}</h2>
-      <ul class="detail-list">
+      <ul class="detail-list detail-list--columns">
 ${residencyRows}
       </ul>
     </section>

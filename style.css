@@ -44,6 +44,7 @@ h1, h2, .site-title, .site-nav a {
     white-space: nowrap;
 }
 .site-title:hover { color: #a22106; }
+.site-title .accent { display: block; font-size: 1.7em; line-height: .9; margin-top: .05em; }
 
 .site-nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 20px; padding-top: 14px; }
 .site-nav a {
@@ -135,6 +136,8 @@ h1.hero-lede {
 .detail-list li { display: grid; grid-template-columns: minmax(130px, .4fr) 1fr; gap: 24px; padding: 17px 0; border-bottom: 1px solid rgba(32, 30, 31, .2); color: rgba(32, 30, 31, .68); font-size: 18px; }
 .detail-list span:first-child { font-family: "Anton", Impact, sans-serif; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #201e1f; }
 .detail-list em { font-style: normal; opacity: .7; }
+.detail-list--columns { columns: 2; column-gap: 48px; }
+.detail-list--columns li { break-inside: avoid; }
 
 .entry-card {
     position: relative;
@@ -251,6 +254,7 @@ h1.hero-lede {
     .image-panel, .image-panel img { min-height: 250px; }
     .section { margin-top: 64px; }
     .detail-list li { grid-template-columns: 1fr; gap: 7px; }
+    .detail-list--columns { columns: 1; }
     h1.hero-lede { font-size: clamp(26px, 7vw, 38px); }
     .entry-carousel__track { height: 460px; }
     .entry-carousel .entry-card { width: 92%; }

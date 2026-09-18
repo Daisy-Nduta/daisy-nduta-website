@@ -5,7 +5,7 @@
   "reachLabel": "Reach Daisy",
   "reachHeading": "Contact details",
   "details": [
-    { "label": "Email", "linkText": "hello@daisynduta.com", "href": "#", "note": "(to be confirmed)" },
-    { "label": "Instagram", "linkText": "@daisynduta", "href": "#", "note": "(link to be confirmed — e.g. for DJ work)" }
+    { "label": "Email", "linkText": "info@daisynduta.com", "href": "mailto:info@daisynduta.com", "note": "" },
+    { "label": "Instagram", "linkText": "@naniwh0", "href": "https://www.instagram.com/naniwh0/", "note": "" }
   ]
 }
