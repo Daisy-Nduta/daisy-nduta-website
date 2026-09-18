@@ -360,11 +360,19 @@
     // alone wasn't doing aggressively enough.
     const SCALE_STEP = [1, .78, .6];
 
+    // Mobile gets a genuinely different transition, not just a clipped-down
+    // version of the desktop one -- see AGENTS.md for why. Cards sit stacked
+    // in the exact same spot and crossfade via opacity alone; nothing
+    // slides or tilts, so there's nothing for the mobile track's
+    // `overflow: hidden` to ever need to clip mid-animation.
+    const mobileQuery = window.matchMedia('(max-width: 700px)');
+
     let active = 0;
     let timer = null;
     const prevDelta = new Array(total).fill(0);
 
     function render() {
+        const isMobile = mobileQuery.matches;
         const wrappedActive = ((active % total) + total) % total;
         cards.forEach((card, i) => {
             let delta = (i - active) % total;
@@ -382,8 +390,19 @@
 
             const abs = Math.abs(delta);
             card.style.opacity = abs === 0 ? '1' : abs === 1 ? '.85' : abs === 2 ? '.5' : '0';
-            const scale = SCALE_STEP[Math.min(abs, SCALE_STEP.length - 1)];
-            card.style.transform = `translateX(calc(-50% + ${delta * HORIZONTAL_STEP}%)) translateY(${delta * VERTICAL_STEP}px) rotateY(${delta * FAN_ANGLE}deg) translateZ(${-abs * DEPTH_STEP}px) scale(${scale})`;
+            // Cards have no natural stacking order of their own (no real
+            // depth on mobile, and desktop's translateZ ordering can still
+            // use a backstop) -- without this, whichever card is *later* in
+            // the DOM would always paint on top, regardless of which one is
+            // actually active.
+            card.style.zIndex = String(10 - abs);
+
+            if (isMobile) {
+                card.style.transform = 'translateX(-50%)';
+            } else {
+                const scale = SCALE_STEP[Math.min(abs, SCALE_STEP.length - 1)];
+                card.style.transform = `translateX(calc(-50% + ${delta * HORIZONTAL_STEP}%)) translateY(${delta * VERTICAL_STEP}px) rotateY(${delta * FAN_ANGLE}deg) translateZ(${-abs * DEPTH_STEP}px) scale(${scale})`;
+            }
             card.setAttribute('aria-hidden', abs === 0 ? 'false' : 'true');
             card.tabIndex = abs === 0 ? 0 : -1;
 
@@ -459,6 +478,11 @@
     carousel.addEventListener('mouseleave', startAutoplay);
     carousel.addEventListener('focusin', stopAutoplay);
     carousel.addEventListener('focusout', startAutoplay);
+
+    // Re-render on crossing the mobile breakpoint (resize, device rotation)
+    // so the transform style (fan vs. crossfade) always matches the CSS
+    // that's actually active, not just whatever it was at page load.
+    mobileQuery.addEventListener('change', render);
 
     render();
     startAutoplay();
