@@ -256,7 +256,7 @@ h1.hero-lede {
     .detail-list li { grid-template-columns: 1fr; gap: 7px; }
     .detail-list--columns { columns: 1; }
     h1.hero-lede { font-size: clamp(26px, 7vw, 38px); }
-    .entry-carousel__track { height: 460px; }
+    .entry-carousel__track { height: 460px; overflow: hidden; }
     .entry-carousel .entry-card { width: 92%; }
     .entry-carousel__controls { gap: 16px; margin-top: 24px; }
 }
