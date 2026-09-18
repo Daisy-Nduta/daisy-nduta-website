@@ -300,9 +300,22 @@
 })();
 
 /*
- * Home's entry cards auto-rotate through a single focal position instead of
- * sitting in a static grid (client-requested). No-ops on every other page,
- * since .entry-carousel only exists on index.html.
+ * Home's entry cards fan out in real 3D (perspective + rotateY/translateZ),
+ * bringing one card to the front at a time, rather than sitting in a static
+ * grid. No-ops on every other page, since .entry-carousel only exists on
+ * index.html.
+ *
+ * Architecture note -- why there's no rotating "ring" here (there used to
+ * be): a true rigid cylinder only recycles perfectly if the angle between
+ * cards is exactly 360/total (72deg for 5 cards) -- anything shallower
+ * (which is what "less amateurish, see more cards" needed) breaks the
+ * assumption that stepping `active` by `total` returns to the same
+ * rotation, so the "active" card silently stops lining up with the front
+ * once `active` runs past total-1 (confirmed by logging actual net angles
+ * per step -- at active=5 the "front" card was really sitting at -170deg).
+ * Instead, every card's transform is recomputed fresh each render() from
+ * its own bounded delta (-2..2) from the active card -- no persistent
+ * rotation state to drift out of sync.
  */
 (() => {
     const carousel = document.querySelector('.entry-carousel');
@@ -310,44 +323,111 @@
 
     const track = carousel.querySelector('.entry-carousel__track');
     const cards = Array.from(track.querySelectorAll('.entry-card'));
+    const cardBodies = cards.map(card => card.querySelector('.entry-card__body'));
+    const cardArrows = cards.map(card => card.querySelector('.entry-card__arrow'));
     const dots = Array.from(carousel.querySelectorAll('.entry-carousel__dot'));
-    const prevBtn = carousel.querySelector('.entry-carousel__arrow--prev');
-    const nextBtn = carousel.querySelector('.entry-carousel__arrow--next');
     const total = cards.length;
     if (total < 2) return;
 
     const AUTOPLAY_MS = 4500;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // Shallow on purpose -- at total=5 and max |delta|=2, 2*FAN_ANGLE stays
+    // well under 90deg, so every card (not just the immediate neighbor)
+    // stays in the front-facing hemisphere and reads clearly, producing a
+    // real fanned arc instead of a steep pentagon-slice where only a sliver
+    // of each neighbor was ever visible (client feedback: "amateurish").
+    const FAN_ANGLE = 26;
+    // How far each step recedes into the screen -- independent of card
+    // width (unlike the old cylinder radius) since there's no longer a
+    // rigid shape to keep intact; tune this and FAN_ANGLE together.
+    const DEPTH_STEP = 260;
+    // Explicit horizontal spread, in % of the card's own width -- rotateY
+    // alone only shifts a card sideways as a side effect of also pushing it
+    // back in Z (proportional to sin(angle)*depth), which is far too small
+    // to keep 5 ~560px-wide cards from piling on top of each other. This is
+    // what actually fans them out; rotateY is just the tilt on top of it.
+    const HORIZONTAL_STEP = 115;
+    // Cards descend as they trail away from the active one (client: "the
+    // downward spiral" from the reference site) -- signed, not absolute, so
+    // it reads as one continuous spiral rather than a symmetric dome.
+    const VERTICAL_STEP = 58;
+    // Peeking cards are also explicitly scaled down, not just relying on
+    // perspective foreshortening -- every card renders at the same ~560px
+    // layout width regardless of delta, so without this they kept enough
+    // footprint to visibly overlap even with HORIZONTAL_STEP pushing them
+    // apart. This shrinks their actual bounding box, which perspective
+    // alone wasn't doing aggressively enough.
+    const SCALE_STEP = [1, .78, .6];
+
     let active = 0;
     let timer = null;
+    const prevDelta = new Array(total).fill(0);
 
     function render() {
+        const wrappedActive = ((active % total) + total) % total;
         cards.forEach((card, i) => {
-            let delta = i - active;
+            let delta = (i - active) % total;
             if (delta > total / 2) delta -= total;
             if (delta < -total / 2) delta += total;
 
-            const abs = Math.abs(delta);
-            const scale = abs === 0 ? 1 : abs === 1 ? .82 : .68;
-            const opacity = abs === 0 ? 1 : abs === 1 ? .65 : .3;
+            // One card per step necessarily wraps from one extreme straight
+            // to the other (e.g. -2 -> 2) -- animating that with the normal
+            // transition would visibly swing it back across the front. It's
+            // already the dimmest, furthest-out card when this happens, so
+            // popping it instantly into place (transition disabled for one
+            // frame) reads as far less jarring than animating the jump.
+            const wrapped = Math.abs(delta - prevDelta[i]) > 1;
+            card.style.transition = wrapped ? 'none' : '';
 
-            card.style.transform = `translate(calc(-50% + ${delta * 58}%), 0) scale(${scale})`;
-            card.style.opacity = String(opacity);
-            card.style.zIndex = String(10 - abs);
+            const abs = Math.abs(delta);
+            card.style.opacity = abs === 0 ? '1' : abs === 1 ? '.85' : abs === 2 ? '.5' : '0';
+            const scale = SCALE_STEP[Math.min(abs, SCALE_STEP.length - 1)];
+            card.style.transform = `translateX(calc(-50% + ${delta * HORIZONTAL_STEP}%)) translateY(${delta * VERTICAL_STEP}px) rotateY(${delta * FAN_ANGLE}deg) translateZ(${-abs * DEPTH_STEP}px) scale(${scale})`;
             card.setAttribute('aria-hidden', abs === 0 ? 'false' : 'true');
             card.tabIndex = abs === 0 ? 0 : -1;
+
+            // Only the active card shows its label/title/summary text --
+            // with 4 fanned cards' text blocks all sitting in roughly the
+            // same lower band, they overlapped into an unreadable pile.
+            // Peeking cards keep just their image, which is what actually
+            // reads cleanly at an angle; the text only makes sense head-on.
+            // Faded via opacity (with a matching CSS transition), not an
+            // instant visibility toggle -- toggling visibility made the
+            // outgoing card's title vanish the instant you clicked, before
+            // the card had even started moving, which read as a glitch.
+            if (cardBodies[i]) {
+                cardBodies[i].style.opacity = abs === 0 ? '1' : '0';
+                cardBodies[i].setAttribute('aria-hidden', abs === 0 ? 'false' : 'true');
+            }
+            if (cardArrows[i]) cardArrows[i].style.opacity = abs === 0 ? '1' : '0';
+
+            if (wrapped) {
+                void card.offsetWidth; // force the 'none' transition to actually apply before restoring it
+                requestAnimationFrame(() => { card.style.transition = ''; });
+            }
+            prevDelta[i] = delta;
         });
-        dots.forEach((dot, i) => dot.setAttribute('aria-current', String(i === active)));
+        dots.forEach((dot, i) => dot.setAttribute('aria-current', String(i === wrappedActive)));
     }
 
+    // `active` itself is never wrapped -- it just keeps counting up or down
+    // forever, so the spin never has to "reset." Only `delta` (above) is
+    // bounded, and it's recomputed fresh every render from the unbounded
+    // `active`, so it can't drift no matter how many steps have happened.
+    function next() { active += 1; render(); }
+
+    // Only a direct jump (a dot or a visible-but-not-front card) needs to
+    // land on a specific logical index -- take the shortest path there
+    // rather than always spinning forward, but still via unbounded `active`.
     function goTo(index) {
-        active = ((index % total) + total) % total;
+        const current = ((active % total) + total) % total;
+        let diff = index - current;
+        if (diff > total / 2) diff -= total;
+        if (diff < -total / 2) diff += total;
+        active += diff;
         render();
     }
-
-    function next() { goTo(active + 1); }
-    function prev() { goTo(active - 1); }
 
     function stopAutoplay() {
         if (timer) clearInterval(timer);
@@ -359,8 +439,6 @@
         timer = setInterval(next, AUTOPLAY_MS);
     }
 
-    prevBtn.addEventListener('click', () => { prev(); startAutoplay(); });
-    nextBtn.addEventListener('click', () => { next(); startAutoplay(); });
     dots.forEach((dot, i) => dot.addEventListener('click', () => { goTo(i); startAutoplay(); }));
 
     // A peeking (non-active) card brings itself into focus on click rather
@@ -368,7 +446,8 @@
     // actually leaves the page.
     cards.forEach((card, i) => {
         card.addEventListener('click', event => {
-            if (i !== active) {
+            const wrappedActive = ((active % total) + total) % total;
+            if (i !== wrappedActive) {
                 event.preventDefault();
                 goTo(i);
                 startAutoplay();

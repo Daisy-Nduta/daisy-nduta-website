@@ -169,8 +169,8 @@ h1.hero-lede {
 .entry-carousel { margin-top: 24px; }
 .entry-carousel__track {
     position: relative;
-    height: 560px;
-    overflow: hidden;
+    height: 640px;
+    perspective: 1550px;
 }
 .entry-carousel .entry-card {
     position: absolute;
@@ -178,28 +178,14 @@ h1.hero-lede {
     left: 50%;
     width: min(560px, 86%);
     height: 100%;
+    backface-visibility: hidden;
 }
 @media (prefers-reduced-motion: no-preference) {
-    .entry-carousel .entry-card { transition: transform .6s cubic-bezier(.22, 1, .36, 1), opacity .6s ease; }
+    .entry-carousel .entry-card { transition: transform .8s cubic-bezier(.22, 1, .36, 1), opacity .5s ease; }
+    .entry-carousel .entry-card__body, .entry-carousel .entry-card__arrow { transition: opacity .35s ease; }
 }
 .entry-carousel .entry-card__media { aspect-ratio: 4 / 3; }
-.entry-carousel__controls { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 32px; }
-.entry-carousel__arrow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border: 1px solid rgba(32, 30, 31, .2);
-    border-radius: 50%;
-    background: none;
-    font-family: inherit;
-    font-size: 18px;
-    color: inherit;
-    cursor: pointer;
-    transition: border-color .2s ease, color .2s ease;
-}
-.entry-carousel__arrow:hover { border-color: #a22106; color: #a22106; }
+.entry-carousel__controls { display: flex; align-items: center; justify-content: center; margin-top: 32px; }
 .entry-carousel__dots { display: flex; gap: 10px; }
 .entry-carousel__dot {
     width: 9px;

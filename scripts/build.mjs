@@ -161,7 +161,9 @@ ${links}
   </header>`;
 }
 
-const FOOTER = '<footer class="page-footer">Daisy Nduta</footer>';
+// Year is computed at build time, not hardcoded -- rebuilding the site next
+// year (or any year after) picks up the current year automatically.
+const FOOTER = `<footer class="page-footer">Daisy Nduta ${new Date().getFullYear()}</footer>`;
 
 function detailList(details) {
     const rows = (details || [])
@@ -474,17 +476,15 @@ ${culturalCards.map(itemCard).join('\n')}
         head('Daisy Nduta', 'Daisy Nduta — Nairobi-based sound designer, location recordist, and cultural producer.') +
             `<body>
   <main class="page page--home">
-    <h1 class="home-wordmark">Daisy Nduta</h1>
+    <h1 class="home-wordmark">${accentLastWord('Daisy Nduta')}</h1>
     <section class="entry-carousel" aria-roledescription="carousel" aria-label="Explore the work">
       <div class="entry-carousel__track">
 ${entryCards}
       </div>
       <div class="entry-carousel__controls">
-        <button type="button" class="entry-carousel__arrow entry-carousel__arrow--prev" aria-label="Previous">←</button>
         <div class="entry-carousel__dots">
 ${entryDots}
         </div>
-        <button type="button" class="entry-carousel__arrow entry-carousel__arrow--next" aria-label="Next">→</button>
       </div>
     </section>
     ${FOOTER}
