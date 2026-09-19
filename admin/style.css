@@ -9,6 +9,13 @@ body {
     overflow: hidden;
 }
 
+/* Everything (app.js's renderShell output) is rendered into this one div --
+   without it also being a flex column filling body's height, .topbar/.layout
+   below it are plain block-level children (not flex items), so their flex/
+   min-height rules are no-ops and the whole shell grows to content height
+   instead of being capped to the viewport with internal scrolling. */
+#app { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
 .topbar {
     flex: 0 0 auto;
     display: flex;
