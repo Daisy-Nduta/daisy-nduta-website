@@ -567,20 +567,67 @@
           <label class="field__label">Small label above the title</label>
           <input type="text" class="home-label" value="${escapeHtml(card.label)}" style="margin-bottom:14px;">
           <label class="field__label">One-line summary</label>
-          <textarea class="home-summary">${escapeHtml(card.summary)}</textarea>
+          <textarea class="home-summary" style="margin-bottom:14px;">${escapeHtml(card.summary)}</textarea>
+          <label class="field__label">Image</label>
+          <div class="image-field">
+            <div class="image-field__preview" id="home-image-preview-${i}" style="${card.image ? `background-image:url('/${card.image}')` : ''}"></div>
+            <div>
+              <button type="button" class="btn btn--small home-upload-btn" data-index="${i}">Upload image</button>
+              <button type="button" class="btn btn--small home-remove-image-btn" data-index="${i}" ${card.image ? '' : 'style="display:none"'}>Remove image</button>
+              <input type="file" class="home-file-input" data-index="${i}" accept="image/*" style="display:none">
+            </div>
+          </div>
+          <input type="hidden" class="home-image" value="${escapeHtml(card.image)}">
         </div>`
         )
         .join('')}
     `;
+
+    slot.querySelectorAll('.home-upload-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        slot.querySelector(`.home-file-input[data-index="${btn.dataset.index}"]`).click();
+      });
+    });
+    slot.querySelectorAll('.home-file-input').forEach(input => {
+      input.addEventListener('change', async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const i = input.dataset.index;
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+          const res = await fetch('/api/media', { method: 'POST', body: formData });
+          const uploaded = await res.json();
+          if (!res.ok) throw new Error(uploaded.error || 'Upload failed');
+          document.querySelectorAll('.home-image')[i].value = uploaded.path;
+          document.getElementById(`home-image-preview-${i}`).style.backgroundImage = `url('/${uploaded.path}')`;
+          slot.querySelector(`.home-remove-image-btn[data-index="${i}"]`).style.display = '';
+          toast('Image uploaded.', 'ok');
+        } catch (error) {
+          toast(error.message, 'error');
+        }
+      });
+    });
+    slot.querySelectorAll('.home-remove-image-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = btn.dataset.index;
+        document.querySelectorAll('.home-image')[i].value = '';
+        document.getElementById(`home-image-preview-${i}`).style.backgroundImage = '';
+        btn.style.display = 'none';
+      });
+    });
+
     document.getElementById('save-btn').addEventListener('click', async () => {
       const titles = document.querySelectorAll('.home-title');
       const labels = document.querySelectorAll('.home-label');
       const summaries = document.querySelectorAll('.home-summary');
+      const images = document.querySelectorAll('.home-image');
       const cards = data.cards.map((card, i) => ({
         ...card,
         title: titles[i].value,
         label: labels[i].value,
-        summary: summaries[i].value
+        summary: summaries[i].value,
+        image: images[i].value
       }));
       try {
         await api('/pages/home', { method: 'PUT', body: JSON.stringify({ cards }) });
