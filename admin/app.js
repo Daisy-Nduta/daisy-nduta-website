@@ -513,7 +513,8 @@
     const { data } = await api(`/pages/${key}`);
     if (key === 'home') renderHomeForm(data);
     else if (key === 'about') renderAboutForm(data);
-    else renderContactForm(data);
+    else if (key === 'contact') renderContactForm(data);
+    else renderSettingsForm(data);
   }
 
   function listFieldHtml(idPrefix, items, columns) {
@@ -751,6 +752,51 @@
       };
       try {
         await api('/pages/contact', { method: 'PUT', body: JSON.stringify(payload) });
+        toast('Saved.', 'ok');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    });
+  }
+
+  function renderSettingsForm(data) {
+    const DEFAULT_ACCENT = '#a22106';
+    const slot = document.getElementById('editor-slot');
+    const current = /^#[0-9a-fA-F]{6}$/.test(data.accentColor || '') ? data.accentColor : DEFAULT_ACCENT;
+
+    slot.innerHTML = `
+      <div class="editor__header"><span class="editor__title">Site Settings</span><div class="editor__actions"><button class="btn btn--primary" id="save-btn">Save</button></div></div>
+
+      <div class="field">
+        <label class="field__label">Highlight color (used sparingly across the site — hover states, the active nav link, card arrows)</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <input type="color" id="f-accent-picker" value="${escapeHtml(current)}" style="width:48px;height:40px;padding:0;border:1px solid rgba(32,30,31,.2);border-radius:6px;cursor:pointer;">
+          <input type="text" id="f-accent-hex" value="${escapeHtml(current)}" style="max-width:140px;" maxlength="7">
+          <button type="button" class="btn btn--small" id="accent-reset-btn">Reset to default</button>
+        </div>
+        <p style="font-size:13px;color:rgba(32,30,31,.55);margin-top:10px;max-width:520px;">This is a highlight color, not a background fill — pick something that reads clearly against white and near-black text. Changes apply the next time the site rebuilds (automatic while the Content Manager is running).</p>
+      </div>
+    `;
+
+    const picker = document.getElementById('f-accent-picker');
+    const hexInput = document.getElementById('f-accent-hex');
+    picker.addEventListener('input', () => { hexInput.value = picker.value; });
+    hexInput.addEventListener('input', () => {
+      if (/^#[0-9a-fA-F]{6}$/.test(hexInput.value)) picker.value = hexInput.value;
+    });
+    document.getElementById('accent-reset-btn').addEventListener('click', () => {
+      picker.value = DEFAULT_ACCENT;
+      hexInput.value = DEFAULT_ACCENT;
+    });
+
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      const value = hexInput.value.trim();
+      if (!/^#[0-9a-fA-F]{6}$/.test(value)) {
+        toast('Enter a color as a 6-digit hex code, e.g. #a22106.', 'error');
+        return;
+      }
+      try {
+        await api('/pages/settings', { method: 'PUT', body: JSON.stringify({ accentColor: value }) });
         toast('Saved.', 'ok');
       } catch (error) {
         toast(error.message, 'error');

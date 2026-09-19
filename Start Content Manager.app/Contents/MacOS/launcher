@@ -1,0 +1,14 @@
+#!/bin/bash
+# This is the real logic-holding script's GUI wrapper — it just gives
+# "Start Content Manager.command" a proper app icon and name in Finder.
+# The actual work happens in that .command file; keep this in sync if
+# this app bundle is ever moved relative to the project folder.
+
+APP_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+TARGET="$APP_DIR/Start Content Manager.command"
+
+if [ -f "$TARGET" ]; then
+    open -a Terminal "$TARGET"
+else
+    osascript -e 'display alert "Start Content Manager" message "Couldn'"'"'t find \"Start Content Manager.command\" next to this app. Make sure this app stays inside the project folder." as critical'
+fi

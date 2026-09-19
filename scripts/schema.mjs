@@ -33,8 +33,14 @@ export const RESERVED_PAGE_SLUGS = new Set(['index', 'sound', 'curation-producti
 export const FILE_COLLECTIONS = [
     { key: 'home', label: 'Home Page', file: 'content/pages/home.json' },
     { key: 'about', label: 'About Page', file: 'content/pages/about.json' },
-    { key: 'contact', label: 'Contact Page', file: 'content/pages/contact.json' }
+    { key: 'contact', label: 'Contact Page', file: 'content/pages/contact.json' },
+    { key: 'settings', label: 'Site Settings', file: 'content/pages/settings.json' }
 ];
+
+// Fallback used by build.mjs whenever content/pages/settings.json is missing
+// or its accentColor isn't a valid 6-digit hex -- keeps a bad/blank value
+// from breaking the highlight color across the whole site.
+export const DEFAULT_ACCENT_COLOR = '#a22106';
 
 export function isFolderCollection(key) {
     return FOLDER_COLLECTIONS.some(c => c.key === key);

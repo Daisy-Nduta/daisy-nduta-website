@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
-import { RESERVED_PAGE_SLUGS } from './schema.mjs';
+import { RESERVED_PAGE_SLUGS, DEFAULT_ACCENT_COLOR } from './schema.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
@@ -26,6 +26,11 @@ let NAV_ITEMS = [
     ['about.html', 'About'],
     ['contact.html', 'Contact']
 ];
+
+// The site's highlight/hover color -- editable from the CMS (Site Settings)
+// via content/pages/settings.json, read fresh at the top of build() below.
+// head() reads this module-level binding the same way it reads NAV_ITEMS.
+let ACCENT_COLOR = DEFAULT_ACCENT_COLOR;
 
 // folder key (content/sections/<key>/) -> where it lives on the site
 const TOP_SECTIONS = {
@@ -152,6 +157,7 @@ function head(title, description) {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
   <link rel="stylesheet" href="style.css">
+  <style>:root{--accent:${ACCENT_COLOR};}</style>
   <script src="script.js" defer></script>
 </head>
 `;
@@ -333,6 +339,19 @@ function cleanupOrphans(currentSlugs) {
 }
 
 function build() {
+    // Site-wide highlight color, editable from the CMS (Site Settings).
+    // Falls back to the built-in default if the file's missing (a fresh
+    // checkout before the first build) or its value isn't a valid 6-digit
+    // hex -- a bad value here would otherwise silently break the accent
+    // color across every generated page.
+    let settings = {};
+    try {
+        settings = readJson('pages/settings.json');
+    } catch {
+        settings = {};
+    }
+    ACCENT_COLOR = /^#[0-9a-fA-F]{6}$/.test(settings.accentColor || '') ? settings.accentColor : DEFAULT_ACCENT_COLOR;
+
     // Client-added top-level pages (content/sections/pages/) -- a plain
     // folder collection like film/theatre/etc, just with a different field
     // shape (see schema.mjs). Reserved slugs are skipped defensively: the

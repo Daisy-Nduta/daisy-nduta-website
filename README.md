@@ -6,8 +6,8 @@ The public site is plain static HTML/CSS/JS, hosted on **GitHub Pages** with a c
 
 ## Editing the site (for Daisy / non-technical use)
 
-1. **The very first time**, double-click **`First-Time Setup.command`** in this folder. It installs Node.js if you don't already have it (or asks you to run the official installer if Homebrew isn't available), sets up this project's files, and then starts the Content Manager for you. This can take a few minutes.
-2. **Every time after that**, double-click **`Start Content Manager.command`** instead. A terminal window opens, starts the Content Manager, and opens your browser automatically.
+1. **The very first time**, double-click **`First-Time Setup`** (the app with the DN icon) in this folder. It installs Node.js if you don't already have it (or asks you to run the official installer if Homebrew isn't available), sets up this project's files, and then starts the Content Manager for you. This can take a few minutes.
+2. **Every time after that**, double-click **`Start Content Manager`** (the other DN-icon app) instead. A terminal window opens, starts the Content Manager, and opens your browser automatically.
 3. Your browser opens two tabs: the **site preview** (`http://localhost:8080/`) and the **editor** (`http://localhost:8080/admin/`). Edit any page or project, add new ones, or upload images in the editor. Changes save automatically as you go.
 4. When you're happy with your changes, click **Publish to GitHub** in the editor's top bar. Your live site updates automatically within a minute or two.
 5. When you're done editing, close the terminal window (or press Ctrl+C in it) to stop the Content Manager.
@@ -34,8 +34,10 @@ Project structure at a glance:
 ├── scripts/build.mjs       # content/ -> the static .html files
 ├── server.mjs               # Local CMS host: static server + auto-rebuild + publish endpoint
 ├── publish.html              # One-click "Publish to GitHub" dashboard
-├── First-Time Setup.command  # One-time double-click setup (installs Node.js + deps) for non-technical use
-├── Start Content Manager.command  # Everyday double-click launcher for non-technical use (macOS)
+├── First-Time Setup.app      # One-time double-click setup (installs Node.js + deps), custom icon
+├── Start Content Manager.app # Everyday double-click launcher, custom icon (macOS)
+├── First-Time Setup.command  # The actual setup script — the .app above is a thin icon/name wrapper around it
+├── Start Content Manager.command  # The actual launcher script — the .app above is a thin icon/name wrapper around it
 ├── style.css, script.js       # Shared styling and the pointer-reactive canvas backgrounds
 ├── images/uploads/             # Photos uploaded via the CMS land here
 └── *.html                       # Generated output — do not hand-edit, see AGENTS.md

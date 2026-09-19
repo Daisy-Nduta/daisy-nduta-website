@@ -1,5 +1,10 @@
 * { box-sizing: border-box; }
 
+/* Fallback only -- the generated pages override this from content/pages/settings.json
+   via an inline <style> in <head> (see head() in scripts/build.mjs), so a client-chosen
+   highlight color always wins once one's been set through the CMS. */
+:root { --accent: #a22106; }
+
 html { min-height: 100%; }
 
 body {
@@ -43,7 +48,7 @@ h1, h2, .site-title, .site-nav a {
     text-transform: uppercase;
     white-space: nowrap;
 }
-.site-title:hover { color: #a22106; }
+.site-title:hover { color: var(--accent); }
 .site-title .accent { display: block; font-size: 1.7em; line-height: .9; margin-top: .05em; }
 
 .site-nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 20px; padding-top: 14px; }
@@ -55,7 +60,7 @@ h1, h2, .site-title, .site-nav a {
     text-transform: uppercase;
     opacity: .6;
 }
-.site-nav a:hover, .site-nav a[aria-current="page"] { opacity: 1; color: #a22106; }
+.site-nav a:hover, .site-nav a[aria-current="page"] { opacity: 1; color: var(--accent); }
 
 .home-wordmark {
     max-width: none;
@@ -85,7 +90,7 @@ h1, h2, .site-title, .site-nav a {
 }
 
 h1, h2, p { margin-top: 0; }
-.accent { color: #a22106; }
+.accent { color: var(--accent); }
 h1 {
     max-width: 900px;
     margin-bottom: 58px;
@@ -152,8 +157,8 @@ h1.hero-lede {
     text-decoration: none;
     transition: transform .3s ease, box-shadow .3s ease;
 }
-.entry-card:hover { transform: translateY(-4px); box-shadow: 0 24px 55px rgba(0, 0, 0, .12); border-color: #a22106; }
-.entry-card:hover .entry-card__arrow { color: #a22106; }
+.entry-card:hover { transform: translateY(-4px); box-shadow: 0 24px 55px rgba(0, 0, 0, .12); border-color: var(--accent); }
+.entry-card:hover .entry-card__arrow { color: var(--accent); }
 .entry-card__media {
     aspect-ratio: 4 / 3;
     display: flex;
@@ -200,7 +205,7 @@ h1.hero-lede {
     cursor: pointer;
     transition: background .2s ease, transform .2s ease;
 }
-.entry-carousel__dot[aria-current="true"] { background: #a22106; transform: scale(1.3); }
+.entry-carousel__dot[aria-current="true"] { background: var(--accent); transform: scale(1.3); }
 
 .item-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 8px; }
 .item-card {
@@ -215,8 +220,8 @@ h1.hero-lede {
     text-decoration: none;
     transition: transform .3s ease, box-shadow .3s ease;
 }
-.item-card:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(0, 0, 0, .1); border-color: #a22106; }
-.item-card:hover .item-card__arrow { color: #a22106; }
+.item-card:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(0, 0, 0, .1); border-color: var(--accent); }
+.item-card:hover .item-card__arrow { color: var(--accent); }
 .item-card__media {
     aspect-ratio: 4 / 3;
     display: flex;
@@ -239,7 +244,7 @@ h1.hero-lede {
 .cross-listed a { color: inherit; }
 
 .placeholder { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; }
-.placeholder:hover { color: #a22106; }
+.placeholder:hover { color: var(--accent); }
 .page-footer { margin-top: 90px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .58; }
 
 @media (max-width: 700px) {

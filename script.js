@@ -50,7 +50,21 @@
      */
     const preset = document.body.dataset.bg || 'puddles';
     const INK = 'rgba(32, 30, 31,';
-    const ACCENT = 'rgba(162, 33, 6,'; // #a22106, the site's highlight color -- used sparingly, only on each animation's most reactive/pointer-linked element
+
+    // The highlight color is a single source of truth: the --accent custom
+    // property (default #a22106, overridable per-site from the CMS -- see
+    // head() in scripts/build.mjs). Read it here too so the canvas animations'
+    // accent-colored elements always match whatever style.css is using,
+    // rather than hardcoding a separate rgb triplet that could drift out of
+    // sync with a client-chosen color.
+    function hexToRgbTriplet(hex, fallback) {
+        const match = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+        if (!match) return fallback;
+        const int = parseInt(match[1], 16);
+        return `${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}`;
+    }
+    const accentHex = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+    const ACCENT = `rgba(${hexToRgbTriplet(accentHex, '162, 33, 6')},`;
 
     const WATER_LINES = 46;
     const WATER_POINTS = 200;
