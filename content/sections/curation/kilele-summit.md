@@ -1,11 +1,11 @@
 ---
-title: "Kilele Summit"
+title: Kilele Summit
 order: 1
-cardLabel: "Freelance Producer"
-cardSummary: "Freelance Producer — showcases."
+cardLabel: Freelance Producer
+cardSummary: Freelance Producer — showcases.
 details:
-  - label: "Role"
-    value: "Freelance Producer — showcases"
-image: ""
+  - label: Role
+    value: Freelance Producer — showcases
+images: []
 ---
 Tell us about Kilele Summit — the showcases produced and the people involved.

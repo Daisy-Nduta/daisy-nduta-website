@@ -1,6 +1,6 @@
 (() => {
   const app = document.getElementById('app');
-  const state = { collections: [], activeKey: null, activeKind: null, entries: [], activeSlug: null, entry: null, dirty: false };
+  const state = { collections: [], activeKey: null, activeKind: null, entries: [], activeSlug: null, entry: null, dirty: false, currentImages: [] };
 
   // ---------------------------------------------------------------------
   // API helper
@@ -214,6 +214,67 @@
       .join('');
   }
 
+  // ---------------------------------------------------------------------
+  // Multiple-images field (item detail pages + client-added Pages) --
+  // state.currentImages holds the array for whichever form is open, since
+  // only one form is ever open at a time in this app.
+  // ---------------------------------------------------------------------
+
+  function imagesFieldHtml() {
+    return `
+      <div class="field">
+        <label class="field__label">Images (shown as a scrolling row on the page)</label>
+        <div class="image-gallery-field" id="images-list"></div>
+        <button type="button" class="btn btn--small" id="add-image-btn">+ Add image</button>
+        <input type="file" id="image-file-input" accept="image/*" style="display:none">
+      </div>`;
+  }
+
+  function renderImagesList() {
+    const list = document.getElementById('images-list');
+    if (!list) return;
+    list.innerHTML = state.currentImages
+      .map(
+        (src, i) => `
+      <div class="image-gallery-field__item">
+        <div class="image-field__preview" style="background-image:url('/${escapeHtml(src)}')"></div>
+        <button type="button" class="image-gallery-field__remove" data-index="${i}" title="Remove">&times;</button>
+      </div>`
+      )
+      .join('');
+  }
+
+  function wireImagesField(initialImages) {
+    state.currentImages = [...(initialImages || [])];
+    renderImagesList();
+    document.getElementById('add-image-btn').addEventListener('click', () => {
+      document.getElementById('image-file-input').click();
+    });
+    document.getElementById('image-file-input').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const res = await fetch('/api/media', { method: 'POST', body: formData });
+        const uploaded = await res.json();
+        if (!res.ok) throw new Error(uploaded.error || 'Upload failed');
+        state.currentImages.push(uploaded.path);
+        renderImagesList();
+        toast('Image uploaded.', 'ok');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+      e.target.value = '';
+    });
+    document.getElementById('images-list').addEventListener('click', e => {
+      const btn = e.target.closest('.image-gallery-field__remove');
+      if (!btn) return;
+      state.currentImages.splice(Number(btn.dataset.index), 1);
+      renderImagesList();
+    });
+  }
+
   function renderItemForm(key, entry, collection) {
     if (collection && collection.shape === 'page') {
       renderPageEntryForm(key, entry, collection);
@@ -222,7 +283,7 @@
 
     const slot = document.getElementById('editor-slot');
     const isNew = !entry;
-    const data = entry || { title: '', order: 99, cardLabel: '', cardSummary: '', details: [], image: '', body: '', alsoShowOn: '', crossListedLabel: '', crossListedHref: '', crossListedText: '' };
+    const data = entry || { title: '', order: 99, cardLabel: '', cardSummary: '', details: [], images: [], body: '', alsoShowOn: '', crossListedLabel: '', crossListedHref: '', crossListedText: '' };
 
     slot.className = 'editor';
     slot.innerHTML = `
@@ -260,18 +321,7 @@
         <button type="button" class="btn btn--small" id="add-detail-btn">+ Add detail</button>
       </div>
 
-      <div class="field">
-        <label class="field__label">Image</label>
-        <div class="image-field">
-          <div class="image-field__preview" id="image-preview" style="${data.image ? `background-image:url('/${data.image}')` : ''}"></div>
-          <div>
-            <button type="button" class="btn btn--small" id="upload-btn">Upload image</button>
-            <button type="button" class="btn btn--small" id="remove-image-btn" ${data.image ? '' : 'style="display:none"'}>Remove image</button>
-            <input type="file" id="file-input" accept="image/*" style="display:none">
-          </div>
-        </div>
-        <input type="hidden" id="f-image" value="${escapeHtml(data.image)}">
-      </div>
+      ${imagesFieldHtml()}
 
       <div class="field">
         <label class="field__label">Description</label>
@@ -302,29 +352,7 @@
       if (e.target.classList.contains('detail-row__remove')) e.target.closest('.detail-row').remove();
     });
 
-    document.getElementById('upload-btn').addEventListener('click', () => document.getElementById('file-input').click());
-    document.getElementById('file-input').addEventListener('change', async e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const formData = new FormData();
-      formData.append('file', file);
-      try {
-        const res = await fetch('/api/media', { method: 'POST', body: formData });
-        const uploaded = await res.json();
-        if (!res.ok) throw new Error(uploaded.error || 'Upload failed');
-        document.getElementById('f-image').value = uploaded.path;
-        document.getElementById('image-preview').style.backgroundImage = `url('/${uploaded.path}')`;
-        document.getElementById('remove-image-btn').style.display = '';
-        toast('Image uploaded.', 'ok');
-      } catch (error) {
-        toast(error.message, 'error');
-      }
-    });
-    document.getElementById('remove-image-btn').addEventListener('click', () => {
-      document.getElementById('f-image').value = '';
-      document.getElementById('image-preview').style.backgroundImage = '';
-      document.getElementById('remove-image-btn').style.display = 'none';
-    });
+    wireImagesField(data.images);
 
     document.getElementById('save-btn').addEventListener('click', () => saveItem(key, isNew ? null : data.slug, collection));
     if (!isNew) {
@@ -343,7 +371,7 @@
       cardLabel: document.getElementById('f-cardLabel').value,
       cardSummary: document.getElementById('f-cardSummary').value,
       details,
-      image: document.getElementById('f-image').value,
+      images: [...state.currentImages],
       body: document.getElementById('f-body').value
     };
     const alsoShowOn = document.getElementById('f-alsoShowOn');
@@ -401,7 +429,7 @@
   function renderPageEntryForm(key, entry, collection) {
     const slot = document.getElementById('editor-slot');
     const isNew = !entry;
-    const data = entry || { title: '', order: 99, image: '', body: '' };
+    const data = entry || { title: '', order: 99, images: [], body: '' };
 
     slot.className = 'editor';
     slot.innerHTML = `
@@ -423,18 +451,7 @@
         <input type="number" id="f-order" value="${escapeHtml(data.order)}">
       </div>
 
-      <div class="field">
-        <label class="field__label">Image (optional)</label>
-        <div class="image-field">
-          <div class="image-field__preview" id="image-preview" style="${data.image ? `background-image:url('/${data.image}')` : ''}"></div>
-          <div>
-            <button type="button" class="btn btn--small" id="upload-btn">Upload image</button>
-            <button type="button" class="btn btn--small" id="remove-image-btn" ${data.image ? '' : 'style="display:none"'}>Remove image</button>
-            <input type="file" id="file-input" accept="image/*" style="display:none">
-          </div>
-        </div>
-        <input type="hidden" id="f-image" value="${escapeHtml(data.image)}">
-      </div>
+      ${imagesFieldHtml()}
 
       <div class="field">
         <label class="field__label">Body copy (leave a blank line between paragraphs)</label>
@@ -442,29 +459,7 @@
       </div>
     `;
 
-    document.getElementById('upload-btn').addEventListener('click', () => document.getElementById('file-input').click());
-    document.getElementById('file-input').addEventListener('change', async e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const formData = new FormData();
-      formData.append('file', file);
-      try {
-        const res = await fetch('/api/media', { method: 'POST', body: formData });
-        const uploaded = await res.json();
-        if (!res.ok) throw new Error(uploaded.error || 'Upload failed');
-        document.getElementById('f-image').value = uploaded.path;
-        document.getElementById('image-preview').style.backgroundImage = `url('/${uploaded.path}')`;
-        document.getElementById('remove-image-btn').style.display = '';
-        toast('Image uploaded.', 'ok');
-      } catch (error) {
-        toast(error.message, 'error');
-      }
-    });
-    document.getElementById('remove-image-btn').addEventListener('click', () => {
-      document.getElementById('f-image').value = '';
-      document.getElementById('image-preview').style.backgroundImage = '';
-      document.getElementById('remove-image-btn').style.display = 'none';
-    });
+    wireImagesField(data.images);
 
     document.getElementById('save-btn').addEventListener('click', () => savePageEntry(key, isNew ? null : data.slug, collection));
     if (!isNew) {
@@ -476,7 +471,7 @@
     return {
       title: document.getElementById('f-title').value,
       order: Number(document.getElementById('f-order').value) || 99,
-      image: document.getElementById('f-image').value,
+      images: [...state.currentImages],
       body: document.getElementById('f-body').value
     };
   }

@@ -119,7 +119,7 @@ export function createAdminApi(ROOT) {
             writeEntry(key, slug, {
                 title: fields.title,
                 order: fields.order ?? 99,
-                image: fields.image || '',
+                images: Array.isArray(fields.images) ? fields.images : [],
                 body: fields.body || ''
             });
             return res.json({ slug });
@@ -131,7 +131,7 @@ export function createAdminApi(ROOT) {
             cardLabel: fields.cardLabel || '',
             cardSummary: fields.cardSummary || '',
             details: fields.details || [],
-            image: fields.image || '',
+            images: Array.isArray(fields.images) ? fields.images : [],
             ...(CROSS_LINK_COLLECTIONS.includes(key)
                 ? {
                       ...(fields.alsoShowOn ? { alsoShowOn: fields.alsoShowOn } : {}),
@@ -156,7 +156,7 @@ export function createAdminApi(ROOT) {
             writeEntry(key, slug, {
                 title: fields.title,
                 order: fields.order ?? 99,
-                image: fields.image || '',
+                images: Array.isArray(fields.images) ? fields.images : [],
                 body: fields.body || ''
             });
             return res.json({ ok: true });

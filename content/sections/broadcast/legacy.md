@@ -1,15 +1,15 @@
 ---
-title: "Legacy"
+title: Legacy
 order: 3
-cardLabel: "2020"
-cardSummary: "Location Recordist & Post-Production Engineer, in-house at Grand Bay Media."
+cardLabel: '2020'
+cardSummary: 'Location Recordist & Post-Production Engineer, in-house at Grand Bay Media.'
 details:
-  - label: "Role"
-    value: "Location Recordist & Post-Production Engineer, in-house at Grand Bay Media"
-  - label: "Year"
-    value: "2020"
-  - label: "Featuring"
-    value: "Interviews with Eugene Mbugua, Vimal Shah, Pius Muchiri"
-image: ""
+  - label: Role
+    value: 'Location Recordist & Post-Production Engineer, in-house at Grand Bay Media'
+  - label: Year
+    value: '2020'
+  - label: Featuring
+    value: 'Interviews with Eugene Mbugua, Vimal Shah, Pius Muchiri'
+images: []
 ---
 Tell us about Legacy — its story, setting, and the people who shaped it.

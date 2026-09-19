@@ -1,11 +1,11 @@
 ---
-title: "Augustine Ang"
+title: Augustine Ang
 order: 1
-cardLabel: "Mix Engineer"
-cardSummary: "Mix Engineer."
+cardLabel: Mix Engineer
+cardSummary: Mix Engineer.
 details:
-  - label: "Role"
-    value: "Mix Engineer"
-image: ""
+  - label: Role
+    value: Mix Engineer
+images: []
 ---
 Tell us about this project — its story, setting, and the people who shaped it.

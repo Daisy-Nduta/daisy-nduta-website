@@ -1,11 +1,11 @@
 ---
-title: "mau from nowhere — Listening Party"
+title: mau from nowhere — Listening Party
 order: 5
-cardLabel: "Producer"
-cardSummary: "Producer."
+cardLabel: Producer
+cardSummary: Producer.
 details:
-  - label: "Role"
-    value: "Producer"
-image: ""
+  - label: Role
+    value: Producer
+images: []
 ---
 Tell us about the mau from nowhere listening party — setting and guests.

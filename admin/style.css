@@ -189,6 +189,23 @@ body {
     flex: 0 0 auto;
 }
 
+.image-gallery-field { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+.image-gallery-field__item { position: relative; }
+.image-gallery-field__item .image-field__preview { width: 84px; height: 84px; }
+.image-gallery-field__remove {
+    position: absolute;
+    top: -7px; right: -7px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(32, 30, 31, .2);
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    color: rgba(32, 30, 31, .6);
+}
+.image-gallery-field__remove:hover { border-color: #b23b3b; color: #b23b3b; }
+
 .toast {
     position: fixed;
     bottom: 22px;

@@ -1,11 +1,11 @@
 ---
-title: "Melbourne Music Week"
+title: Melbourne Music Week
 order: 2
-cardLabel: "Curation & Production"
-cardSummary: "Curated and delivered events."
+cardLabel: Curation & Production
+cardSummary: Curated and delivered events.
 details:
-  - label: "Role"
-    value: "Curated and delivered events"
-image: ""
+  - label: Role
+    value: Curated and delivered events
+images: []
 ---
 Tell us about the events curated for Melbourne Music Week.

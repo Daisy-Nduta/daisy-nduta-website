@@ -135,6 +135,22 @@ h1.hero-lede {
 .image-panel img { display: block; width: 100%; height: 100%; min-height: 390px; object-fit: cover; }
 .image-panel p { margin: 0; padding: 24px; text-align: center; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: rgba(32, 30, 31, .45); }
 
+/* A credit/project or client page can carry several images (a plain
+   side-scrolling row, not a click-to-swap gallery) -- .image-panel above is
+   still what renders when there are zero or -- via itemPage()'s figure --
+   this is what renders once there's at least one. */
+.image-gallery { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; }
+.image-gallery img {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    width: min(560px, 80%);
+    height: 390px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid rgba(32, 30, 31, .12);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, .08);
+}
+
 .section { margin-top: 96px; }
 .section h2 { margin-bottom: 24px; font-size: clamp(34px, 4.5vw, 68px); font-weight: 400; line-height: .9; }
 .detail-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid rgba(32, 30, 31, .2); }
@@ -257,6 +273,7 @@ h1.hero-lede {
     .home-wordmark { font-size: clamp(40px, 14vw, 72px); margin-bottom: 40px; }
     .intro-grid, .item-grid { grid-template-columns: 1fr; gap: 24px; }
     .image-panel, .image-panel img { min-height: 250px; }
+    .image-gallery img { width: 82%; height: 250px; }
     .section { margin-top: 64px; }
     .detail-list li { grid-template-columns: 1fr; gap: 7px; }
     .detail-list--columns { columns: 1; }

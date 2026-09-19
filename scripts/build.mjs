@@ -194,9 +194,23 @@ function mediaBlock(className, image, alt) {
     return `<div class="${className}"><p>Image — pending</p></div>`;
 }
 
+// A credit/project or client-added page can carry several images now (a
+// simple side-scrolling row, not a click-to-swap gallery -- see AGENTS.md).
+// Card grids still only ever show one representative thumbnail per item
+// (mediaBlock() above, fed the first image) -- this is only for the
+// item/page's own detail page, where all of them are shown.
+function imageGallery(images, alt, pendingText) {
+    const list = (images || []).filter(Boolean);
+    if (list.length === 0) {
+        return `<figure class="image-panel"><p>${escapeHtml(pendingText)}</p></figure>`;
+    }
+    const imgs = list.map(src => `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`).join('\n        ');
+    return `<div class="image-gallery">\n        ${imgs}\n      </div>`;
+}
+
 function itemCard(item) {
     return `      <a class="item-card" href="${item.slug}.html">
-        ${mediaBlock('item-card__media', item.image, item.title)}
+        ${mediaBlock('item-card__media', (item.images || [])[0], item.title)}
         <div class="item-card__body">
           <p class="label">${escapeHtml(item.cardLabel)}</p>
           <h3>${accentLastWord(item.title)}</h3>
@@ -208,9 +222,7 @@ function itemCard(item) {
 
 function itemPage(item) {
     const section = TOP_SECTIONS[item.folder];
-    const figure = item.image
-        ? `<figure class="image-panel"><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}"></figure>`
-        : '<figure class="image-panel"><p>Image / reel — pending</p></figure>';
+    const figure = imageGallery(item.images, item.title, 'Image / reel — pending');
 
     let crossHtml = '';
     if (item.crossListedHref) {
@@ -288,7 +300,8 @@ function paragraphsFromBody(text) {
 }
 
 function customPageHtml(page) {
-    const figure = page.image ? `<figure class="image-panel"><img src="${escapeHtml(page.image)}" alt="${escapeHtml(page.title)}"></figure>` : '';
+    const images = (page.images || []).filter(Boolean);
+    const figure = images.length ? imageGallery(images, page.title, '') : '';
     const body = paragraphsFromBody(page.copy) || '        <p class="copy">Content coming soon.</p>';
     return (
         head(`${page.title} — Daisy Nduta`, `${page.title} — Daisy Nduta.`) +
