@@ -7,25 +7,46 @@
     "Her work spans Sound — audio post-production and broadcast; Film — location recording and sound design for narrative and documentary storytelling; Curation & Production — event producing and cultural programming; and Cultural Projects — longer-term, multidisciplinary, community-rooted initiatives — including credits at the Melbourne International Film Festival, Golden State Film Festival, and Melbourne Fringe Festival, and events for Melbourne Music Week and MPavilion.",
     "Based in Nairobi. Working across East Africa, Australia, and beyond."
   ],
-  "portraitImage": "",
+  "portraitImage": "images/uploads/photoroom-20260904-163202.jpg",
   "portraitPlaceholder": "Photo of Daisy on set/at events — pending",
   "awardsLabel": "Recognition",
   "awardsHeading": "Awards",
   "awards": [
-    { "year": "2022", "text": "Best Sound Designer Award — Women in Film Awards." },
-    { "year": "2019", "text": "Young Creatives Award — Assimilate." }
+    {
+      "year": "2022",
+      "text": "Best Sound Designer Award — Women in Film Awards."
+    },
+    {
+      "year": "2019",
+      "text": "Young Creatives Award — Assimilate."
+    }
   ],
   "residenciesLabel": "Development",
   "residenciesHeading": "Residencies & Programs",
   "residencies": [
-    { "year": "2025", "text": "PerFORM Music Incubator Mentorship, Music Management." },
-    { "year": "2020", "text": "Signal Arts Artist Residency." },
-    { "year": "2019", "text": "The Push — Music Industry Pathways Program, Live Music Stream." }
+    {
+      "year": "2025",
+      "text": "PerFORM Music Incubator Mentorship, Music Management."
+    },
+    {
+      "year": "2020",
+      "text": "Signal Arts Artist Residency."
+    },
+    {
+      "year": "2019",
+      "text": "The Push — Music Industry Pathways Program, Live Music Stream."
+    }
   ],
   "clientsLabel": "Selected Clients",
   "clientsHeading": "Trusted by",
   "clients": [
-    { "label": "Nairobi", "value": "Heinrich Böll Foundation" },
-    { "label": "Australia", "value": "RRR Community Radio" }
+    {
+      "label": "Nairobi",
+      "value": "Heinrich Böll Foundation"
+    },
+    {
+      "label": "Australia",
+      "value": "RRR Community Radio"
+    }
   ]
 }

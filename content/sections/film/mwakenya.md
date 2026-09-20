@@ -10,6 +10,7 @@ details:
     value: Musila Munuve
   - label: Year
     value: '2025'
-images: []
+images:
+  - images/uploads/mwakenya.jpg
 ---
 Tell us about Mwakenya — its story, setting, and the people who shaped it.
