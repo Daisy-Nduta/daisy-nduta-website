@@ -65,10 +65,17 @@ h1, h2, .site-title, .site-nav a {
 .home-wordmark {
     max-width: none;
     width: 100%;
-    margin: 0 auto 72px;
+    margin: 0 auto;
     text-align: center;
     font-size: clamp(56px, 12vw, 168px);
     line-height: .85;
+}
+.home-wordmark__tagline {
+    max-width: 520px;
+    margin: 20px auto 72px;
+    text-align: center;
+    font-size: clamp(15px, 1.8vw, 20px);
+    color: rgba(32, 30, 31, .6);
 }
 
 .page {
@@ -180,9 +187,11 @@ h1.hero-lede {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     background: rgba(32, 30, 31, .04);
     border-bottom: 1px solid rgba(32, 30, 31, .12);
 }
+.entry-card__media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .entry-card__media p { margin: 0; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: rgba(32, 30, 31, .35); }
 .entry-card__body { padding: 28px 28px 64px; }
 .entry-card .label { margin-bottom: 16px; }
@@ -243,9 +252,11 @@ h1.hero-lede {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     background: rgba(32, 30, 31, .04);
     border-bottom: 1px solid rgba(32, 30, 31, .12);
 }
+.item-card__media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .item-card__media p { margin: 0; padding: 16px; text-align: center; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: rgba(32, 30, 31, .35); }
 .item-card__body { padding: 18px 20px 30px; }
 .item-card .label { margin-bottom: 10px; }
@@ -270,7 +281,8 @@ h1.hero-lede {
     .site-nav a { font-size: 11px; }
     .page { width: min(100% - 36px, 1200px); margin-top: 9vh; }
     .page--home { margin-top: 10vh; }
-    .home-wordmark { font-size: clamp(40px, 14vw, 72px); margin-bottom: 40px; }
+    .home-wordmark { font-size: clamp(40px, 14vw, 72px); }
+    .home-wordmark__tagline { margin: 16px auto 40px; }
     .intro-grid, .item-grid { grid-template-columns: 1fr; gap: 24px; }
     .image-panel, .image-panel img { min-height: 250px; }
     .image-gallery img { width: 82%; height: 250px; }

@@ -62,6 +62,146 @@
   }
 
   // ---------------------------------------------------------------------
+  // Image crop -- every "Upload image" button runs the chosen photo through
+  // this before it ever reaches /api/media, so the person controls what
+  // part of the photo fills the (always 4:3) card/thumbnail slot instead of
+  // getting whatever object-fit: cover happens to center on. Pan (drag) +
+  // zoom only, no free-shape corner resize -- keeps the crop math (and the
+  // UI) simple and hard to get into a broken state. GIFs skip this
+  // entirely and upload untouched, since a canvas re-draw would kill the
+  // animation (see the server's own isGif branch in admin-api.mjs).
+  // ---------------------------------------------------------------------
+
+  const CROP_VIEWPORT = { w: 480, h: 360 }; // 4:3, matches .entry-card__media / .item-card__media
+
+  function openCropModal(file) {
+    return new Promise(resolve => {
+      if (!file.type || file.type === 'image/gif') {
+        resolve(file);
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const { w: vw, h: vh } = CROP_VIEWPORT;
+        const baseScale = Math.max(vw / img.naturalWidth, vh / img.naturalHeight);
+        let zoom = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        function displayScale() {
+          return baseScale * zoom;
+        }
+
+        function clampOffset() {
+          const s = displayScale();
+          const dw = img.naturalWidth * s;
+          const dh = img.naturalHeight * s;
+          offsetX = Math.min(0, Math.max(offsetX, vw - dw));
+          offsetY = Math.min(0, Math.max(offsetY, vh - dh));
+        }
+
+        function centerOffset() {
+          const s = displayScale();
+          offsetX = (vw - img.naturalWidth * s) / 2;
+          offsetY = (vh - img.naturalHeight * s) / 2;
+          clampOffset();
+        }
+
+        centerOffset();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = `
+          <div class="confirm-box crop-box">
+            <p>Drag the photo to reposition it, use the slider to zoom, then apply the crop.</p>
+            <div class="crop-stage" style="width:${vw}px;height:${vh}px;">
+              <img src="${url}" class="crop-stage__img" draggable="false">
+            </div>
+            <input type="range" class="crop-zoom" min="1" max="3" step="0.01" value="1">
+            <div class="confirm-box__actions">
+              <button class="btn" data-action="original">Use original</button>
+              <button class="btn" data-action="cancel">Cancel</button>
+              <button class="btn btn--primary" data-action="apply">Apply crop</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+
+        const stage = overlay.querySelector('.crop-stage');
+        const imgEl = overlay.querySelector('.crop-stage__img');
+        const zoomInput = overlay.querySelector('.crop-zoom');
+
+        function paint() {
+          const s = displayScale();
+          imgEl.style.width = `${img.naturalWidth * s}px`;
+          imgEl.style.height = `${img.naturalHeight * s}px`;
+          imgEl.style.left = `${offsetX}px`;
+          imgEl.style.top = `${offsetY}px`;
+        }
+        paint();
+
+        let drag = null;
+        stage.addEventListener('pointerdown', e => {
+          drag = { startX: e.clientX, startY: e.clientY, origX: offsetX, origY: offsetY };
+          stage.setPointerCapture(e.pointerId);
+        });
+        stage.addEventListener('pointermove', e => {
+          if (!drag) return;
+          offsetX = drag.origX + (e.clientX - drag.startX);
+          offsetY = drag.origY + (e.clientY - drag.startY);
+          clampOffset();
+          paint();
+        });
+        stage.addEventListener('pointerup', () => {
+          drag = null;
+        });
+        zoomInput.addEventListener('input', () => {
+          // Zoom around the viewport's center so the point already framed
+          // stays roughly framed, rather than drifting toward the image's
+          // top-left corner as the scale changes.
+          const before = displayScale();
+          const cx = vw / 2 - offsetX;
+          const cy = vh / 2 - offsetY;
+          zoom = Number(zoomInput.value);
+          const after = displayScale();
+          offsetX = vw / 2 - cx * (after / before);
+          offsetY = vh / 2 - cy * (after / before);
+          clampOffset();
+          paint();
+        });
+
+        function finish(result) {
+          URL.revokeObjectURL(url);
+          overlay.remove();
+          resolve(result);
+        }
+
+        overlay.addEventListener('click', e => {
+          const action = e.target.dataset.action;
+          if (e.target === overlay || action === 'cancel') {
+            finish(null);
+          } else if (action === 'original') {
+            finish(file);
+          } else if (action === 'apply') {
+            const s = displayScale();
+            const nx = -offsetX / s;
+            const ny = -offsetY / s;
+            const nw = vw / s;
+            const nh = vh / s;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(nw);
+            canvas.height = Math.round(nh);
+            canvas.getContext('2d').drawImage(img, nx, ny, nw, nh, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => finish(blob), 'image/jpeg', 0.92);
+          }
+        });
+      };
+      img.src = url;
+    });
+  }
+
+  // ---------------------------------------------------------------------
   // Layout
   // ---------------------------------------------------------------------
 
@@ -253,8 +393,11 @@
     document.getElementById('image-file-input').addEventListener('change', async e => {
       const file = e.target.files[0];
       if (!file) return;
+      const cropped = await openCropModal(file);
+      e.target.value = '';
+      if (!cropped) return;
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', cropped, cropped.name || 'crop.jpg');
       try {
         const res = await fetch('/api/media', { method: 'POST', body: formData });
         const uploaded = await res.json();
@@ -265,7 +408,6 @@
       } catch (error) {
         toast(error.message, 'error');
       }
-      e.target.value = '';
     });
     document.getElementById('images-list').addEventListener('click', e => {
       const btn = e.target.closest('.image-gallery-field__remove');
@@ -552,6 +694,12 @@
     const slot = document.getElementById('editor-slot');
     slot.innerHTML = `
       <div class="editor__header"><span class="editor__title">Home Page Cards</span><div class="editor__actions"><button class="btn btn--primary" id="save-btn">Save</button></div></div>
+
+      <div class="field" style="max-width:640px;">
+        <label class="field__label">One-line tagline (below your name)</label>
+        <input type="text" id="f-tagline" value="${escapeHtml(data.tagline || '')}">
+      </div>
+
       <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;">The 5 large cards on the home page. Order here is left-to-right, top-to-bottom.</p>
       ${data.cards
         .map(
@@ -588,8 +736,11 @@
         const file = e.target.files[0];
         if (!file) return;
         const i = input.dataset.index;
+        const cropped = await openCropModal(file);
+        e.target.value = '';
+        if (!cropped) return;
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', cropped, cropped.name || 'crop.jpg');
         try {
           const res = await fetch('/api/media', { method: 'POST', body: formData });
           const uploaded = await res.json();
@@ -624,8 +775,9 @@
         summary: summaries[i].value,
         image: images[i].value
       }));
+      const tagline = document.getElementById('f-tagline').value;
       try {
-        await api('/pages/home', { method: 'PUT', body: JSON.stringify({ cards }) });
+        await api('/pages/home', { method: 'PUT', body: JSON.stringify({ tagline, cards }) });
         toast('Saved.', 'ok');
       } catch (error) {
         toast(error.message, 'error');
@@ -700,8 +852,11 @@
     document.getElementById('file-input').addEventListener('change', async e => {
       const file = e.target.files[0];
       if (!file) return;
+      const cropped = await openCropModal(file);
+      e.target.value = '';
+      if (!cropped) return;
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', cropped, cropped.name || 'crop.jpg');
       try {
         const res = await fetch('/api/media', { method: 'POST', body: formData });
         const uploaded = await res.json();

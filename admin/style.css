@@ -238,3 +238,17 @@ body {
 }
 .confirm-box p { font-size: 14px; line-height: 1.4; margin: 0 0 20px; }
 .confirm-box__actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+.crop-box { width: auto; }
+.crop-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid rgba(32, 30, 31, .15);
+    background: rgba(32, 30, 31, .04);
+    cursor: grab;
+    touch-action: none;
+}
+.crop-stage:active { cursor: grabbing; }
+.crop-stage__img { position: absolute; left: 0; top: 0; max-width: none; pointer-events: none; user-select: none; }
+.crop-zoom { width: 100%; margin: 14px 0 0; }

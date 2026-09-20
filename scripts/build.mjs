@@ -512,12 +512,16 @@ ${culturalCards.map(itemCard).join('\n')}
         .map((card, i) => `        <button type="button" class="entry-carousel__dot" data-index="${i}" aria-label="Show ${escapeHtml(card.title)}"></button>`)
         .join('\n');
 
+    const homeTagline = home.tagline
+        ? `\n    <p class="home-wordmark__tagline">${escapeHtml(home.tagline)}</p>`
+        : '';
+
     write(
         'index.html',
         head('Daisy Nduta', 'Daisy Nduta — Nairobi-based sound designer, location recordist, and cultural producer.') +
             `<body>
   <main class="page page--home">
-    <h1 class="home-wordmark">${accentLastWord('Daisy Nduta')}</h1>
+    <h1 class="home-wordmark">${accentLastWord('Daisy Nduta')}</h1>${homeTagline}
     <section class="entry-carousel" aria-roledescription="carousel" aria-label="Explore the work">
       <div class="entry-carousel__track">
 ${entryCards}
