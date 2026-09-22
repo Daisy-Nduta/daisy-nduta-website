@@ -31,7 +31,9 @@
       "title": "About",
       "summary": "A closer look at the work — bio, awards, residencies, and selected clients.",
       "href": "about.html",
-      "images": []
+      "images": [
+        "images/uploads/crop-7.jpg"
+      ]
     },
     {
       "key": "contact",
