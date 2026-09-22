@@ -41,35 +41,35 @@
   "clients": [
     {
       "name": "Heinrich Böll Foundation",
-      "url": ""
+      "url": "https://ke.boell.org/en"
     },
     {
       "name": "RRR Community Radio",
-      "url": ""
+      "url": "https://www.rrr.org.au"
     },
     {
       "name": "Frequency Shift",
-      "url": ""
+      "url": "https://eunic.eu/projects/kenya-frequency-shift"
     },
     {
       "name": "Kilele Summit",
-      "url": ""
+      "url": "https://kilelesummit.org"
     },
     {
       "name": "Melbourne Music Week",
-      "url": ""
+      "url": "https://ra.co/promoters/57019"
     },
     {
       "name": "Footscray Community Arts",
-      "url": ""
+      "url": "https://footscrayarts.com"
     },
     {
       "name": "Melbourne Fringe Festival",
-      "url": ""
+      "url": "https://www.melbournefringe.com.au"
     },
     {
       "name": "Emerging Writers’ Festival",
-      "url": ""
+      "url": "https://emergingwritersfestival.org.au"
     }
   ]
 }
