@@ -12,14 +12,21 @@ cd "$(dirname "$0")"
 
 # Pull the latest updates before starting, so this Mac always has your
 # developer's latest changes without you needing to touch git yourself.
-# Never blocks startup: if it can't pull cleanly (no internet, or you have
-# edits from this machine that haven't been published yet), it just skips
-# and starts with what's already here.
+# Tries the simple, no-surprises route first (--ff-only: only updates if
+# nothing local conflicts) and only falls back to an actual merge if that's
+# not possible -- e.g. a previous Publish attempt committed locally here but
+# couldn't push because this Mac's copy had fallen behind in the meantime.
+# Never blocks startup: on a real conflict (the same line edited both here
+# and elsewhere) it cleanly backs out and starts with what's already here,
+# same as if there were no internet at all.
 echo "Checking for updates..."
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git remote get-url origin >/dev/null 2>&1; then
     if git pull --ff-only >/dev/null 2>&1; then
         echo "Up to date."
+    elif git pull --no-rebase --no-edit >/dev/null 2>&1; then
+        echo "Up to date (combined with an edit already saved on this Mac)."
     else
+        git merge --abort >/dev/null 2>&1
         echo "Couldn't check for updates right now — continuing with what's already on this Mac."
     fi
 else
