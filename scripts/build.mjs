@@ -194,6 +194,24 @@ function mediaBlock(className, image, alt) {
     return `<div class="${className}"><p>Image — pending</p></div>`;
 }
 
+// Home's About/Contact cards can carry several client-uploaded images
+// instead of the single fixed hero shot the other 3 cards use -- one is
+// picked at random client-side (script.js) on each page load, via a
+// data-images attribute baked in here whenever there's more than one.
+// Falls back to a plain mediaBlock() for cards still using the older
+// single `image` string field.
+function entryCardMedia(card) {
+    if (!Array.isArray(card.images)) {
+        return mediaBlock('entry-card__media', card.image, card.title);
+    }
+    const list = card.images.filter(Boolean);
+    if (list.length === 0) {
+        return `<div class="entry-card__media"><p>Image — pending</p></div>`;
+    }
+    const dataAttr = list.length > 1 ? ` data-images="${escapeHtml(JSON.stringify(list))}"` : '';
+    return `<div class="entry-card__media"><img src="${escapeHtml(list[0])}" alt="${escapeHtml(card.title)}"${dataAttr}></div>`;
+}
+
 // A credit/project or client-added page can carry several images now (a
 // simple side-scrolling row, not a click-to-swap gallery -- see AGENTS.md).
 // Card grids still only ever show one representative thumbnail per item
@@ -497,7 +515,7 @@ ${culturalCards.map(itemCard).join('\n')}
     const entryCards = home.cards
         .map(
             (card, i) => `        <a class="entry-card" href="${card.href}" data-index="${i}">
-        ${mediaBlock('entry-card__media', card.image, card.title)}
+        ${entryCardMedia(card)}
         <div class="entry-card__body">
           <p class="label">${escapeHtml(card.label)}</p>
           <h2>${accentLastWord(card.title)}</h2>

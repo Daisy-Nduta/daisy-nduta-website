@@ -241,6 +241,10 @@ a.client-cloud__item:hover { border-bottom-color: currentColor; }
     .entry-carousel .entry-card__body, .entry-carousel .entry-card__arrow { transition: opacity .35s ease; }
 }
 .entry-carousel .entry-card__media { aspect-ratio: 4 / 3; }
+/* Peeking (non-active) cards show the whole photo instead of a cropped
+   fill -- .entry-card__media's own background (set above) shows through
+   as the letterbox color. Set by script.js's render() via `abs !== 0`. */
+.entry-carousel .entry-card--peek .entry-card__media img { object-fit: contain; }
 .entry-carousel__controls { display: flex; align-items: center; justify-content: center; margin-top: 32px; }
 .entry-carousel__dots { display: flex; gap: 10px; }
 .entry-carousel__dot {

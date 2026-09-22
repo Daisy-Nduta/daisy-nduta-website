@@ -690,8 +690,37 @@
     });
   }
 
+  // About/Contact don't have one fixed hero photo the way Sound/Curation/
+  // Cultural Projects do -- these two instead take a batch of images, and
+  // the site shows a different one at random each visit (build.mjs +
+  // script.js). Everything else on this form is one card = one set of
+  // fields; these two need their own small multi-image gallery in the
+  // middle of that shared form, so their image lists live in this
+  // closure (keyed by card index) rather than in the shared `state`
+  // object the single-gallery item/page forms use.
+  const GALLERY_CARD_KEYS = ['about', 'contact'];
+
   function renderHomeForm(data) {
     const slot = document.getElementById('editor-slot');
+    const cardImages = {};
+    data.cards.forEach((card, i) => {
+      if (GALLERY_CARD_KEYS.includes(card.key)) cardImages[i] = [...(card.images || [])];
+    });
+
+    function renderCardGallery(i) {
+      const list = document.getElementById(`home-gallery-${i}`);
+      if (!list) return;
+      list.innerHTML = cardImages[i]
+        .map(
+          (src, gi) => `
+        <div class="image-gallery-field__item">
+          <div class="image-field__preview" style="background-image:url('/${escapeHtml(src)}')"></div>
+          <button type="button" class="image-gallery-field__remove" data-index="${i}" data-image-index="${gi}" title="Remove">&times;</button>
+        </div>`
+        )
+        .join('');
+    }
+
     slot.innerHTML = `
       <div class="editor__header"><span class="editor__title">Home Page Cards</span><div class="editor__actions"><button class="btn btn--primary" id="save-btn">Save</button></div></div>
 
@@ -702,15 +731,15 @@
 
       <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;">The 5 large cards on the home page. Order here is left-to-right, top-to-bottom.</p>
       ${data.cards
-        .map(
-          (card, i) => `
-        <div class="field" style="border:1px solid rgba(32,30,31,.12);border-radius:8px;padding:18px;max-width:640px;">
-          <label class="field__label">Card ${i + 1} — Title</label>
-          <input type="text" class="home-title" value="${escapeHtml(card.title)}" style="margin-bottom:14px;">
-          <label class="field__label">Small label above the title</label>
-          <input type="text" class="home-label" value="${escapeHtml(card.label)}" style="margin-bottom:14px;">
-          <label class="field__label">One-line summary</label>
-          <textarea class="home-summary" style="margin-bottom:14px;">${escapeHtml(card.summary)}</textarea>
+        .map((card, i) => {
+          const isGallery = GALLERY_CARD_KEYS.includes(card.key);
+          const mediaField = isGallery
+            ? `
+          <label class="field__label">Images (one is shown at random each visit)</label>
+          <div class="image-gallery-field" id="home-gallery-${i}"></div>
+          <button type="button" class="btn btn--small home-gallery-add" data-index="${i}">+ Add image</button>
+          <input type="file" class="home-gallery-file-input" data-index="${i}" accept="image/*" style="display:none">`
+            : `
           <label class="field__label">Image</label>
           <div class="image-field">
             <div class="image-field__preview" id="home-image-preview-${i}" style="${card.image ? `background-image:url('/${card.image}')` : ''}"></div>
@@ -720,11 +749,22 @@
               <input type="file" class="home-file-input" data-index="${i}" accept="image/*" style="display:none">
             </div>
           </div>
-          <input type="hidden" class="home-image" value="${escapeHtml(card.image)}">
-        </div>`
-        )
+          <input type="hidden" class="home-image" data-index="${i}" value="${escapeHtml(card.image || '')}">`;
+          return `
+        <div class="field" style="border:1px solid rgba(32,30,31,.12);border-radius:8px;padding:18px;max-width:640px;">
+          <label class="field__label">Card ${i + 1} — Title</label>
+          <input type="text" class="home-title" value="${escapeHtml(card.title)}" style="margin-bottom:14px;">
+          <label class="field__label">Small label above the title</label>
+          <input type="text" class="home-label" value="${escapeHtml(card.label)}" style="margin-bottom:14px;">
+          <label class="field__label">One-line summary</label>
+          <textarea class="home-summary" style="margin-bottom:14px;">${escapeHtml(card.summary)}</textarea>
+          ${mediaField}
+        </div>`;
+        })
         .join('')}
     `;
+
+    Object.keys(cardImages).forEach(i => renderCardGallery(i));
 
     slot.querySelectorAll('.home-upload-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -745,7 +785,7 @@
           const res = await fetch('/api/media', { method: 'POST', body: formData });
           const uploaded = await res.json();
           if (!res.ok) throw new Error(uploaded.error || 'Upload failed');
-          document.querySelectorAll('.home-image')[i].value = uploaded.path;
+          slot.querySelector(`.home-image[data-index="${i}"]`).value = uploaded.path;
           document.getElementById(`home-image-preview-${i}`).style.backgroundImage = `url('/${uploaded.path}')`;
           slot.querySelector(`.home-remove-image-btn[data-index="${i}"]`).style.display = '';
           toast('Image uploaded.', 'ok');
@@ -757,24 +797,61 @@
     slot.querySelectorAll('.home-remove-image-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const i = btn.dataset.index;
-        document.querySelectorAll('.home-image')[i].value = '';
+        slot.querySelector(`.home-image[data-index="${i}"]`).value = '';
         document.getElementById(`home-image-preview-${i}`).style.backgroundImage = '';
         btn.style.display = 'none';
       });
+    });
+
+    slot.querySelectorAll('.home-gallery-add').forEach(btn => {
+      btn.addEventListener('click', () => {
+        slot.querySelector(`.home-gallery-file-input[data-index="${btn.dataset.index}"]`).click();
+      });
+    });
+    slot.querySelectorAll('.home-gallery-file-input').forEach(input => {
+      input.addEventListener('change', async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const i = input.dataset.index;
+        const cropped = await openCropModal(file);
+        e.target.value = '';
+        if (!cropped) return;
+        const formData = new FormData();
+        formData.append('file', cropped, cropped.name || 'crop.jpg');
+        try {
+          const res = await fetch('/api/media', { method: 'POST', body: formData });
+          const uploaded = await res.json();
+          if (!res.ok) throw new Error(uploaded.error || 'Upload failed');
+          cardImages[i].push(uploaded.path);
+          renderCardGallery(i);
+          toast('Image uploaded.', 'ok');
+        } catch (error) {
+          toast(error.message, 'error');
+        }
+      });
+    });
+    slot.addEventListener('click', e => {
+      const btn = e.target.closest('.image-gallery-field__remove');
+      if (!btn) return;
+      const i = btn.dataset.index;
+      cardImages[i].splice(Number(btn.dataset.imageIndex), 1);
+      renderCardGallery(i);
     });
 
     document.getElementById('save-btn').addEventListener('click', async () => {
       const titles = document.querySelectorAll('.home-title');
       const labels = document.querySelectorAll('.home-label');
       const summaries = document.querySelectorAll('.home-summary');
-      const images = document.querySelectorAll('.home-image');
-      const cards = data.cards.map((card, i) => ({
-        ...card,
-        title: titles[i].value,
-        label: labels[i].value,
-        summary: summaries[i].value,
-        image: images[i].value
-      }));
+      const cards = data.cards.map((card, i) => {
+        const base = { ...card, title: titles[i].value, label: labels[i].value, summary: summaries[i].value };
+        if (GALLERY_CARD_KEYS.includes(card.key)) {
+          delete base.image;
+          base.images = cardImages[i];
+        } else {
+          base.image = slot.querySelector(`.home-image[data-index="${i}"]`).value;
+        }
+        return base;
+      });
       const tagline = document.getElementById('f-tagline').value;
       try {
         await api('/pages/home', { method: 'PUT', body: JSON.stringify({ tagline, cards }) });

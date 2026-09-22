@@ -340,6 +340,26 @@
     const cardBodies = cards.map(card => card.querySelector('.entry-card__body'));
     const cardArrows = cards.map(card => card.querySelector('.entry-card__arrow'));
     const dots = Array.from(carousel.querySelectorAll('.entry-carousel__dot'));
+
+    // A card can carry several client-uploaded images (build.mjs bakes them
+    // in as a JSON array on data-images) instead of one fixed photo -- pick
+    // one at random per page load, before anything is visible, so it reads
+    // as "a different photo each visit" rather than a swap after load.
+    cards.forEach(card => {
+        const img = card.querySelector('.entry-card__media img');
+        const raw = img && img.getAttribute('data-images');
+        if (!raw) return;
+        try {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list) && list.length > 1) {
+                img.src = list[Math.floor(Math.random() * list.length)];
+            }
+        } catch {
+            // Malformed data-images (shouldn't happen, build.mjs controls
+            // it) -- just keep the first image already in src.
+        }
+    });
+
     const total = cards.length;
     if (total < 2) return;
 
@@ -404,6 +424,11 @@
 
             const abs = Math.abs(delta);
             card.style.opacity = abs === 0 ? '1' : abs === 1 ? '.85' : abs === 2 ? '.5' : '0';
+            // The active card's image fills the frame edge-to-edge (cropped);
+            // every peeking card instead shows the whole photo uncropped --
+            // client: "for the cards that are not in the center, show the
+            // full image." See the .entry-card--peek rule in style.css.
+            card.classList.toggle('entry-card--peek', abs !== 0);
             // Cards have no natural stacking order of their own (no real
             // depth on mobile, and desktop's translateZ ordering can still
             // use a backstop) -- without this, whichever card is *later* in

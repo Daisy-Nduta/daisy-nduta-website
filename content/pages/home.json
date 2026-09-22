@@ -31,7 +31,7 @@
       "title": "About",
       "summary": "A closer look at the work — bio, awards, residencies, and selected clients.",
       "href": "about.html",
-      "image": ""
+      "images": []
     },
     {
       "key": "contact",
@@ -39,7 +39,7 @@
       "title": "Contact",
       "summary": "For bookings, collaborations, or a first conversation.",
       "href": "contact.html",
-      "image": ""
+      "images": []
     }
   ]
 }
