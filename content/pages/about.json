@@ -40,40 +40,36 @@
   "clientsHeading": "Trusted by",
   "clients": [
     {
-      "label": "Nairobi",
-      "value": "Heinrich Böll Foundation"
+      "name": "Heinrich Böll Foundation",
+      "url": ""
     },
     {
-      "label": "Australia",
-      "value": "RRR Community Radio"
+      "name": "RRR Community Radio",
+      "url": ""
     },
     {
-      "label": "Nairobi",
-      "value": "Frequency Shift"
+      "name": "Frequency Shift",
+      "url": ""
     },
     {
-      "label": "Nairobi",
-      "value": "Kilele Summit"
+      "name": "Kilele Summit",
+      "url": ""
     },
     {
-      "label": "Australia",
-      "value": "Melbourne Music Week"
+      "name": "Melbourne Music Week",
+      "url": ""
     },
     {
-      "label": "Australia",
-      "value": "Footscray Community Arts"
+      "name": "Footscray Community Arts",
+      "url": ""
     },
     {
-      "label": "Australia",
-      "value": "Melbourne Fringe Festival"
+      "name": "Melbourne Fringe Festival",
+      "url": ""
     },
     {
-      "label": "Australia",
-      "value": "Emerging Writers’ Festival"
-    },
-    {
-      "label": "",
-      "value": ""
+      "name": "Emerging Writers’ Festival",
+      "url": ""
     }
   ]
 }

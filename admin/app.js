@@ -833,7 +833,8 @@
       <div class="field"><label class="field__label">Clients — heading</label><input type="text" id="f-clientsHeading" value="${escapeHtml(data.clientsHeading)}"></div>
       <div class="field">
         <label class="field__label">Selected Clients</label>
-        <div id="clients-rows">${listFieldHtml('clients', data.clients, [{ key: 'label', placeholder: 'Location' }, { key: 'value', placeholder: 'Client name' }])}</div>
+        <p style="font-size:13px;color:rgba(32,30,31,.6);margin-bottom:8px;">Renders as a centered cluster of names. A client with a link is highlighted in the site's accent color; leave the link blank to show a name in plain text.</p>
+        <div id="clients-rows">${listFieldHtml('clients', data.clients, [{ key: 'name', placeholder: 'Client name' }, { key: 'url', placeholder: 'Link (optional) — https://…' }])}</div>
         <button type="button" class="btn btn--small" id="clients-add">+ Add client</button>
       </div>
     `;
@@ -846,7 +847,7 @@
     });
     wireListField('awards', [{ key: 'year', placeholder: 'Year' }, { key: 'text', placeholder: 'Award' }], { year: '', text: '' });
     wireListField('residencies', [{ key: 'year', placeholder: 'Year' }, { key: 'text', placeholder: 'Program' }], { year: '', text: '' });
-    wireListField('clients', [{ key: 'label', placeholder: 'Location' }, { key: 'value', placeholder: 'Client name' }], { label: '', value: '' });
+    wireListField('clients', [{ key: 'name', placeholder: 'Client name' }, { key: 'url', placeholder: 'Link (optional) — https://…' }], { name: '', url: '' });
 
     document.getElementById('upload-btn').addEventListener('click', () => document.getElementById('file-input').click());
     document.getElementById('file-input').addEventListener('change', async e => {
@@ -890,7 +891,7 @@
         residencies: collectListField('residencies', [{ key: 'year' }, { key: 'text' }]),
         clientsLabel: document.getElementById('f-clientsLabel').value,
         clientsHeading: document.getElementById('f-clientsHeading').value,
-        clients: collectListField('clients', [{ key: 'label' }, { key: 'value' }])
+        clients: collectListField('clients', [{ key: 'name' }, { key: 'url' }])
       };
       try {
         await api('/pages/about', { method: 'PUT', body: JSON.stringify(payload) });

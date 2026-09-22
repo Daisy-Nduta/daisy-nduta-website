@@ -558,7 +558,18 @@ ${entryDots}
         : `<figure class="image-panel"><p>${escapeHtml(about.portraitPlaceholder)}</p></figure>`;
     const awardsRows = about.awards.map(a => `        <li><span>${escapeHtml(a.year)}</span><span>${escapeHtml(a.text)}</span></li>`).join('\n');
     const residencyRows = about.residencies.map(r => `        <li><span>${escapeHtml(r.year)}</span><span>${escapeHtml(r.text)}</span></li>`).join('\n');
-    const clientRows = about.clients.map(c => `        <li><span>${escapeHtml(c.label)}</span><span>${escapeHtml(c.value)}</span></li>`).join('\n');
+    // Client-authored: a centered, wrapping cluster of names, not a
+    // location/name table -- each entry links out to its own URL (accent
+    // color) when the client supplies one, and renders as plain text
+    // otherwise (see AGENTS.md "Trusted by").
+    const clientCloud = about.clients
+        .filter(c => c.name)
+        .map(c =>
+            c.url
+                ? `<a class="client-cloud__item" href="${escapeHtml(c.url)}">${escapeHtml(c.name)}</a>`
+                : `<span class="client-cloud__item">${escapeHtml(c.name)}</span>`
+        )
+        .join('\n        ');
 
     write(
         'about.html',
@@ -594,9 +605,9 @@ ${residencyRows}
     <section class="section" aria-labelledby="clients">
       <p class="label">${escapeHtml(about.clientsLabel)}</p>
       <h2 id="clients">${accentFull(about.clientsHeading)}</h2>
-      <ul class="detail-list">
-${clientRows}
-      </ul>
+      <div class="client-cloud">
+        ${clientCloud}
+      </div>
     </section>
 
     ${FOOTER}
