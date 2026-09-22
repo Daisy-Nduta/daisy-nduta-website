@@ -405,6 +405,27 @@
     let timer = null;
     const prevDelta = new Array(total).fill(0);
 
+    // The slide/tilt into center takes .8s (see style.css), but the crop
+    // switch (peek's full image -> active's cropped fill) and caption
+    // fade-in used to fire the instant a card *started* becoming active --
+    // so the incoming card spent its whole approach already cropped and
+    // captioned, with no uncropped moment at all. Client: "don't show the
+    // image in full before showing the card text." Delaying just that
+    // reveal (not the slide itself) until the card's roughly arrived fixes
+    // the sequence: full image throughout the approach, crop + caption
+    // together once it settles into center.
+    const SETTLE_MS = 650;
+    const settleTimers = new Array(total).fill(null);
+
+    function revealAsActive(i) {
+        cards[i].classList.remove('entry-card--peek');
+        if (cardBodies[i]) {
+            cardBodies[i].style.opacity = '1';
+            cardBodies[i].setAttribute('aria-hidden', 'false');
+        }
+        if (cardArrows[i]) cardArrows[i].style.opacity = '1';
+    }
+
     function render() {
         const isMobile = mobileQuery.matches;
         const wrappedActive = ((active % total) + total) % total;
@@ -445,20 +466,42 @@
             card.setAttribute('aria-hidden', abs === 0 ? 'false' : 'true');
             card.tabIndex = abs === 0 ? 0 : -1;
 
-            // Only the active card shows its label/title/summary text --
-            // with 4 fanned cards' text blocks all sitting in roughly the
-            // same lower band, they overlapped into an unreadable pile.
-            // Peeking cards keep just their image, which is what actually
-            // reads cleanly at an angle; the text only makes sense head-on.
-            // Faded via opacity (with a matching CSS transition), not an
-            // instant visibility toggle -- toggling visibility made the
-            // outgoing card's title vanish the instant you clicked, before
-            // the card had even started moving, which read as a glitch.
-            if (cardBodies[i]) {
-                cardBodies[i].style.opacity = abs === 0 ? '1' : '0';
-                cardBodies[i].setAttribute('aria-hidden', abs === 0 ? 'false' : 'true');
+            if (settleTimers[i]) {
+                clearTimeout(settleTimers[i]);
+                settleTimers[i] = null;
             }
-            if (cardArrows[i]) cardArrows[i].style.opacity = abs === 0 ? '1' : '0';
+
+            if (abs !== 0) {
+                // Only the active card shows its label/title/summary text --
+                // with 4 fanned cards' text blocks all sitting in roughly the
+                // same lower band, they overlapped into an unreadable pile.
+                // Peeking cards keep just their image, which is what actually
+                // reads cleanly at an angle; the text only makes sense head-on.
+                // The active card's image fills the frame edge-to-edge
+                // (cropped); every peeking card instead shows the whole photo
+                // uncropped -- see the .entry-card--peek rule in style.css.
+                // Both flip immediately when *leaving* active -- only the
+                // reverse direction (becoming active) is deliberately
+                // delayed, below.
+                card.classList.add('entry-card--peek');
+                if (cardBodies[i]) {
+                    cardBodies[i].style.opacity = '0';
+                    cardBodies[i].setAttribute('aria-hidden', 'true');
+                }
+                if (cardArrows[i]) cardArrows[i].style.opacity = '0';
+            } else if (prevDelta[i] === 0 || wrapped || reduceMotion) {
+                // Already active, or arriving with no slide to wait out
+                // (a multi-step dot jump, or reduced-motion) -- reveal now.
+                revealAsActive(i);
+            } else {
+                // Becoming active via a normal one-step slide: keep showing
+                // the full image and hidden caption (still has 'entry-card--
+                // peek' from its last render) until the slide's roughly done.
+                settleTimers[i] = setTimeout(() => {
+                    settleTimers[i] = null;
+                    revealAsActive(i);
+                }, SETTLE_MS);
+            }
 
             if (wrapped) {
                 void card.offsetWidth; // force the 'none' transition to actually apply before restoring it

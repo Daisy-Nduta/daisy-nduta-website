@@ -57,18 +57,53 @@ app.post('/api/publish', (req, res) => {
                 return res.status(500).json({ success: false, step: 'commit', output: commitErrOut || commitErr.message });
             }
 
-            execFile('git', ['push'], { cwd: ROOT }, (pushErr, pushOut, pushErrOut) => {
-                if (pushErr) {
-                    return res.status(500).json({
-                        success: false,
-                        step: 'push',
-                        output: pushErrOut || pushErr.message,
-                        hint: 'Make sure this repo has a GitHub remote configured (git remote add origin ...) and that you can push to it.'
+            // Pull (plain merge, not rebase -- no history rewriting to reason
+            // about) before pushing, so Publish can never fail just because
+            // someone else -- the developer, or this same site open on a
+            // second Mac -- published something in the meantime. Without
+            // this, `git push` alone would reject with a raw git error no
+            // non-technical user could act on.
+            // --no-rebase is required, not just the default: a fresh git
+            // install (exactly what First-Time Setup.command sets up) has no
+            // pull.rebase preference configured, and a modern git refuses to
+            // guess when the branches have actually diverged -- confirmed by
+            // testing this exact scenario, where a bare `git pull --no-edit`
+            // fails outright asking which strategy to use.
+            execFile('git', ['pull', '--no-rebase', '--no-edit'], { cwd: ROOT }, (pullErr, pullOut, pullErrOut) => {
+                if (pullErr) {
+                    // Most likely a genuine merge conflict (the same line of
+                    // the same file changed both here and elsewhere) -- abort
+                    // any half-finished merge so the working tree is left
+                    // clean rather than stuck, and surface a plain-language
+                    // message instead of the raw git wall of text. The
+                    // ignored callback here is deliberate: if there was no
+                    // merge in progress to abort, that failure is expected
+                    // and irrelevant -- we still report the original pull
+                    // failure either way.
+                    execFile('git', ['merge', '--abort'], { cwd: ROOT }, () => {
+                        res.status(500).json({
+                            success: false,
+                            step: 'pull',
+                            output: pullErrOut || pullErr.message,
+                            hint: "Your edit is safely saved on this Mac, but it couldn't be combined automatically with something published elsewhere. Contact your developer to finish publishing this one."
+                        });
                     });
+                    return;
                 }
-                res.json({
-                    success: true,
-                    output: [nothingToCommit ? 'Nothing new to commit.' : commitOut, pushOut || pushErrOut].filter(Boolean).join('\n')
+
+                execFile('git', ['push'], { cwd: ROOT }, (pushErr, pushOut, pushErrOut) => {
+                    if (pushErr) {
+                        return res.status(500).json({
+                            success: false,
+                            step: 'push',
+                            output: pushErrOut || pushErr.message,
+                            hint: 'Make sure this repo has a GitHub remote configured (git remote add origin ...) and that you can push to it.'
+                        });
+                    }
+                    res.json({
+                        success: true,
+                        output: [nothingToCommit ? 'Nothing new to commit.' : commitOut, pullOut, pushOut || pushErrOut].filter(Boolean).join('\n')
+                    });
                 });
             });
         });
