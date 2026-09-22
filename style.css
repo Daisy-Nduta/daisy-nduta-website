@@ -167,6 +167,29 @@ h1.hero-lede {
 .detail-list--columns { columns: 2; column-gap: 48px; }
 .detail-list--columns li { break-inside: avoid; }
 
+/* "Trusted by" client names -- centered and wrapping into a loose,
+   pyramid-like cluster (constrained max-width forces early wraps rather
+   than one wide line) instead of the left-aligned .detail-list table
+   used elsewhere on this page. Only clients with a URL get the accent
+   color + hover underline; plain names stay neutral body-copy color. */
+.client-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px 32px;
+    max-width: 620px;
+    margin: 0 auto;
+    text-align: center;
+}
+.client-cloud__item { font-size: 19px; color: rgba(32, 30, 31, .68); }
+a.client-cloud__item {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color .15s ease;
+}
+a.client-cloud__item:hover { border-bottom-color: currentColor; }
+
 .entry-card {
     position: relative;
     display: flex;
@@ -218,6 +241,10 @@ h1.hero-lede {
     .entry-carousel .entry-card__body, .entry-carousel .entry-card__arrow { transition: opacity .35s ease; }
 }
 .entry-carousel .entry-card__media { aspect-ratio: 4 / 3; }
+/* Peeking (non-active) cards show the whole photo instead of a cropped
+   fill -- .entry-card__media's own background (set above) shows through
+   as the letterbox color. Set by script.js's render() via `abs !== 0`. */
+.entry-carousel .entry-card--peek .entry-card__media img { object-fit: contain; }
 .entry-carousel__controls { display: flex; align-items: center; justify-content: center; margin-top: 32px; }
 .entry-carousel__dots { display: flex; gap: 10px; }
 .entry-carousel__dot {
@@ -293,4 +320,6 @@ h1.hero-lede {
     .entry-carousel__track { height: 460px; overflow: hidden; }
     .entry-carousel .entry-card { width: 92%; }
     .entry-carousel__controls { gap: 16px; margin-top: 24px; }
+    .client-cloud { max-width: 100%; gap: 10px 20px; }
+    .client-cloud__item { font-size: 16px; }
 }

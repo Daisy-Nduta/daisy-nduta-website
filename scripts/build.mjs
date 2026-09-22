@@ -194,6 +194,24 @@ function mediaBlock(className, image, alt) {
     return `<div class="${className}"><p>Image — pending</p></div>`;
 }
 
+// Home's About/Contact cards can carry several client-uploaded images
+// instead of the single fixed hero shot the other 3 cards use -- one is
+// picked at random client-side (script.js) on each page load, via a
+// data-images attribute baked in here whenever there's more than one.
+// Falls back to a plain mediaBlock() for cards still using the older
+// single `image` string field.
+function entryCardMedia(card) {
+    if (!Array.isArray(card.images)) {
+        return mediaBlock('entry-card__media', card.image, card.title);
+    }
+    const list = card.images.filter(Boolean);
+    if (list.length === 0) {
+        return `<div class="entry-card__media"><p>Image — pending</p></div>`;
+    }
+    const dataAttr = list.length > 1 ? ` data-images="${escapeHtml(JSON.stringify(list))}"` : '';
+    return `<div class="entry-card__media"><img src="${escapeHtml(list[0])}" alt="${escapeHtml(card.title)}"${dataAttr}></div>`;
+}
+
 // A credit/project or client-added page can carry several images now (a
 // simple side-scrolling row, not a click-to-swap gallery -- see AGENTS.md).
 // Card grids still only ever show one representative thumbnail per item
@@ -497,7 +515,7 @@ ${culturalCards.map(itemCard).join('\n')}
     const entryCards = home.cards
         .map(
             (card, i) => `        <a class="entry-card" href="${card.href}" data-index="${i}">
-        ${mediaBlock('entry-card__media', card.image, card.title)}
+        ${entryCardMedia(card)}
         <div class="entry-card__body">
           <p class="label">${escapeHtml(card.label)}</p>
           <h2>${accentLastWord(card.title)}</h2>
@@ -558,7 +576,18 @@ ${entryDots}
         : `<figure class="image-panel"><p>${escapeHtml(about.portraitPlaceholder)}</p></figure>`;
     const awardsRows = about.awards.map(a => `        <li><span>${escapeHtml(a.year)}</span><span>${escapeHtml(a.text)}</span></li>`).join('\n');
     const residencyRows = about.residencies.map(r => `        <li><span>${escapeHtml(r.year)}</span><span>${escapeHtml(r.text)}</span></li>`).join('\n');
-    const clientRows = about.clients.map(c => `        <li><span>${escapeHtml(c.label)}</span><span>${escapeHtml(c.value)}</span></li>`).join('\n');
+    // Client-authored: a centered, wrapping cluster of names, not a
+    // location/name table -- each entry links out to its own URL (accent
+    // color) when the client supplies one, and renders as plain text
+    // otherwise (see AGENTS.md "Trusted by").
+    const clientCloud = about.clients
+        .filter(c => c.name)
+        .map(c =>
+            c.url
+                ? `<a class="client-cloud__item" href="${escapeHtml(c.url)}">${escapeHtml(c.name)}</a>`
+                : `<span class="client-cloud__item">${escapeHtml(c.name)}</span>`
+        )
+        .join('\n        ');
 
     write(
         'about.html',
@@ -594,9 +623,9 @@ ${residencyRows}
     <section class="section" aria-labelledby="clients">
       <p class="label">${escapeHtml(about.clientsLabel)}</p>
       <h2 id="clients">${accentFull(about.clientsHeading)}</h2>
-      <ul class="detail-list">
-${clientRows}
-      </ul>
+      <div class="client-cloud">
+        ${clientCloud}
+      </div>
     </section>
 
     ${FOOTER}

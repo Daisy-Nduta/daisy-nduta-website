@@ -7,7 +7,7 @@
       "title": "Sound",
       "summary": "Sound design, location recording, and audio engineering across film, theatre, broadcast, live, and studio work.",
       "href": "sound.html",
-      "image": "images/uploads/crop.jpg"
+      "image": "images/uploads/crop-4.jpg"
     },
     {
       "key": "curation",
@@ -15,7 +15,7 @@
       "title": "Curation & Production",
       "summary": "Producing, programming, and curating live experiences — from venue seasons to festival showcases.",
       "href": "curation-production.html",
-      "image": "images/uploads/ti0a9423.jpg"
+      "image": "images/uploads/crop-5.jpg"
     },
     {
       "key": "cultural",
@@ -31,7 +31,7 @@
       "title": "About",
       "summary": "A closer look at the work — bio, awards, residencies, and selected clients.",
       "href": "about.html",
-      "image": ""
+      "images": []
     },
     {
       "key": "contact",
@@ -39,7 +39,9 @@
       "title": "Contact",
       "summary": "For bookings, collaborations, or a first conversation.",
       "href": "contact.html",
-      "image": ""
+      "images": [
+        "images/uploads/crop-6.jpg"
+      ]
     }
   ]
 }
