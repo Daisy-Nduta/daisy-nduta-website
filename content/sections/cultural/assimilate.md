@@ -14,10 +14,6 @@ details:
     value: 'Immersive work — Melbourne Fringe Festival, 2019'
   - label: Award
     value: 'Young Creatives Award, 2019'
-alsoShowOn: theatre
-crossListedLabel: Also listed under
-crossListedHref: sound.html#theatre
-crossListedText: Sound → Theatre
 images: []
 ---
 Tell us about Assimilate — its story, setting, and the people who shaped it.

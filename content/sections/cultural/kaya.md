@@ -3,6 +3,7 @@ title: Kaya
 order: 3
 cardLabel: '2018'
 cardSummary: 'Sound Recording, Editor & Design. Producer: Daisy Nduta.'
+link: ''
 details:
   - label: Role
     value: 'Sound Recording, Sound Editor, Sound Design'
@@ -12,10 +13,10 @@ details:
     value: '2018'
   - label: Presented as
     value: 'Immersive work — Melbourne Fringe Festival, 2019'
-alsoShowOn: theatre
-crossListedLabel: Also listed under
-crossListedHref: sound.html#theatre
-crossListedText: Sound → Theatre
 images: []
+alsoShowOn: ''
+crossListedLabel: ''
+crossListedHref: ''
+crossListedText: ''
 ---
 Tell us about Kaya — its story, setting, and the people who shaped it.

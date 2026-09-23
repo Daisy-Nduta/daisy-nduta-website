@@ -425,7 +425,7 @@
 
     const slot = document.getElementById('editor-slot');
     const isNew = !entry;
-    const data = entry || { title: '', order: 99, cardLabel: '', cardSummary: '', details: [], images: [], body: '', alsoShowOn: '', crossListedLabel: '', crossListedHref: '', crossListedText: '' };
+    const data = entry || { title: '', order: 99, cardLabel: '', cardSummary: '', details: [], images: [], body: '', link: '', alsoShowOn: '', crossListedLabel: '', crossListedHref: '', crossListedText: '' };
 
     slot.className = 'editor';
     slot.innerHTML = `
@@ -458,6 +458,11 @@
       </div>
 
       <div class="field">
+        <label class="field__label">Link (optional — if this is online, e.g. Vimeo/YouTube/an article, shown as "View online" on the project page)</label>
+        <input type="text" id="f-link" placeholder="https://…" value="${escapeHtml(data.link)}">
+      </div>
+
+      <div class="field">
         <label class="field__label">Details (role/year/credit facts shown on the project page)</label>
         <div id="details-rows">${detailsRowsHtml(data.details)}</div>
         <button type="button" class="btn btn--small" id="add-detail-btn">+ Add detail</button>
@@ -474,14 +479,14 @@
         collection && collection.crossLink
           ? `
       <div class="field">
-        <label class="field__label">Also show this card under (advanced — leave blank normally; e.g. "theatre" to also list it in Sound → Theatre)</label>
+        <label class="field__label">Also show this card under (advanced — leave blank normally; enter another section's key, e.g. "curation", to also list it there)</label>
         <input type="text" id="f-alsoShowOn" value="${escapeHtml(data.alsoShowOn)}">
       </div>
       <div class="field">
-        <label class="field__label">Cross-listed note (advanced — e.g. "Also listed under" / "sound.html#theatre" / "Sound → Theatre")</label>
+        <label class="field__label">Cross-listed note (advanced — e.g. "Also listed under" / "curation-production.html" / "Production & Curation")</label>
         <input type="text" id="f-crossListedLabel" placeholder="Label" value="${escapeHtml(data.crossListedLabel)}" style="margin-bottom:8px">
-        <input type="text" id="f-crossListedHref" placeholder="Link (e.g. sound.html#theatre)" value="${escapeHtml(data.crossListedHref)}" style="margin-bottom:8px">
-        <input type="text" id="f-crossListedText" placeholder="Link text (e.g. Sound → Theatre)" value="${escapeHtml(data.crossListedText)}">
+        <input type="text" id="f-crossListedHref" placeholder="Link (e.g. curation-production.html)" value="${escapeHtml(data.crossListedHref)}" style="margin-bottom:8px">
+        <input type="text" id="f-crossListedText" placeholder="Link text (e.g. Production & Curation)" value="${escapeHtml(data.crossListedText)}">
       </div>`
           : ''
       }
@@ -512,6 +517,7 @@
       order: Number(document.getElementById('f-order').value) || 99,
       cardLabel: document.getElementById('f-cardLabel').value,
       cardSummary: document.getElementById('f-cardSummary').value,
+      link: document.getElementById('f-link').value,
       details,
       images: [...state.currentImages],
       body: document.getElementById('f-body').value
@@ -565,7 +571,7 @@
   // Custom pages (a plain folder collection, but a simpler field shape --
   // title + order + optional image + body, no card/detail-list/cross-link
   // fields. Each one gets its own nav link, in creation/order sequence,
-  // between Cultural Projects and About.)
+  // between Art & Culture Projects and About.)
   // ---------------------------------------------------------------------
 
   function renderPageEntryForm(key, entry, collection) {
@@ -690,8 +696,8 @@
     });
   }
 
-  // About/Contact don't have one fixed hero photo the way Sound/Curation/
-  // Cultural Projects do -- these two instead take a batch of images, and
+  // About/Contact don't have one fixed hero photo the way Sound/Production &
+  // Curation/Art & Culture Projects do -- these two instead take a batch of images, and
   // the site shows a different one at random each visit (build.mjs +
   // script.js). Everything else on this form is one card = one set of
   // fields; these two need their own small multi-image gallery in the

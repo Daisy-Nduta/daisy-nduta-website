@@ -130,6 +130,7 @@ export function createAdminApi(ROOT) {
             order: fields.order ?? 99,
             cardLabel: fields.cardLabel || '',
             cardSummary: fields.cardSummary || '',
+            link: fields.link || '',
             details: fields.details || [],
             images: Array.isArray(fields.images) ? fields.images : [],
             ...(CROSS_LINK_COLLECTIONS.includes(key)

@@ -12,18 +12,20 @@
 // body) that also gets its own nav link -- see the "pages" entry below.
 export const FOLDER_COLLECTIONS = [
     { key: 'film', label: 'Sound → Film', shape: 'item' },
-    { key: 'theatre', label: 'Sound → Theatre', shape: 'item' },
     { key: 'broadcast', label: 'Sound → Broadcast', shape: 'item' },
     { key: 'live', label: 'Sound → Live', shape: 'item' },
     { key: 'studio', label: 'Sound → Studio', shape: 'item' },
-    { key: 'curation', label: 'Curation & Production', shape: 'item' },
-    { key: 'cultural', label: 'Cultural Projects', shape: 'item' },
+    { key: 'curation', label: 'Production & Curation', shape: 'item' },
+    { key: 'cultural', label: 'Art & Culture Projects', shape: 'item' },
     { key: 'pages', label: 'Pages', shape: 'page' }
 ];
 
-// Only "cultural" currently has items that guest-appear on another page
-// (Kaya/Assimilate -> Sound -> Theatre) -- these advanced fields are only
-// shown in the admin form for collections listed here.
+// Generic dual-listing mechanism (a card can also appear on another
+// section's grid) -- unused today (Kaya/Assimilate's old Sound -> Theatre
+// cross-listing was removed along with the Theatre subsection itself, see
+// AGENTS.md), kept available for a future project that genuinely belongs
+// in two places. These advanced fields are only shown in the admin form
+// for collections listed here.
 export const CROSS_LINK_COLLECTIONS = ['cultural'];
 
 // New pages can't take these slugs -- they're the core site's own generated

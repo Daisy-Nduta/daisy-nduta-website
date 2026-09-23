@@ -193,7 +193,7 @@
         });
     }
 
-    /* Curation & Production: a large orbital system -- planets quicken, glow, and trail as the pointer passes near them. */
+    /* Production & Curation: a large orbital system -- planets quicken, glow, and trail as the pointer passes near them. */
     function drawPlanetary() {
         const offsetX = smoothX - .5;
         const offsetY = smoothY - .5;
@@ -253,7 +253,7 @@
         context.stroke();
     }
 
-    /* Cultural Projects: a drifting network, the pointer joins as a node. */
+    /* Art & Culture Projects: a drifting network, the pointer joins as a node. */
     function drawConstellation() {
         const linkRadius = Math.min(width, height) * .2;
         const mouseNode = { x: smoothX * width, y: smoothY * height };

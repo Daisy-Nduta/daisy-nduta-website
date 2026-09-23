@@ -17,12 +17,12 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
 
 // Recomputed at the top of build() once client-added pages (content/sections/pages/)
-// are known, so it includes them between Cultural Projects and About. header()
+// are known, so it includes them between Art & Culture Projects and About. header()
 // reads this module-level binding, so it must be set before any page is generated.
 let NAV_ITEMS = [
     ['sound.html', 'Sound'],
-    ['curation-production.html', 'Curation & Production'],
-    ['cultural-projects.html', 'Cultural Projects'],
+    ['curation-production.html', 'Production & Curation'],
+    ['cultural-projects.html', 'Art & Culture Projects'],
     ['about.html', 'About'],
     ['contact.html', 'Contact']
 ];
@@ -35,17 +35,15 @@ let ACCENT_COLOR = DEFAULT_ACCENT_COLOR;
 // folder key (content/sections/<key>/) -> where it lives on the site
 const TOP_SECTIONS = {
     film: { page: 'sound.html', breadcrumb: 'Sound → Film', backHref: 'sound.html#film', backLabel: 'Sound → Film', bg: 'sound' },
-    theatre: { page: 'sound.html', breadcrumb: 'Sound → Theatre', backHref: 'sound.html#theatre', backLabel: 'Sound → Theatre', bg: 'sound' },
     broadcast: { page: 'sound.html', breadcrumb: 'Sound → Broadcast', backHref: 'sound.html#broadcast', backLabel: 'Sound → Broadcast', bg: 'sound' },
     live: { page: 'sound.html', breadcrumb: 'Sound → Live', backHref: 'sound.html#live', backLabel: 'Sound → Live', bg: 'sound' },
     studio: { page: 'sound.html', breadcrumb: 'Sound → Studio', backHref: 'sound.html#studio', backLabel: 'Sound → Studio', bg: 'sound' },
-    curation: { page: 'curation-production.html', breadcrumb: 'Curation & Production', backHref: 'curation-production.html', backLabel: 'Curation & Production', bg: 'curation' },
-    cultural: { page: 'cultural-projects.html', breadcrumb: 'Cultural Projects', backHref: 'cultural-projects.html', backLabel: 'Cultural Projects', bg: 'cultural' }
+    curation: { page: 'curation-production.html', breadcrumb: 'Production & Curation', backHref: 'curation-production.html', backLabel: 'Production & Curation', bg: 'curation' },
+    cultural: { page: 'cultural-projects.html', breadcrumb: 'Art & Culture Projects', backHref: 'cultural-projects.html', backLabel: 'Art & Culture Projects', bg: 'cultural' }
 };
 
 const SOUND_SUBSECTIONS = [
     ['film', 'Film'],
-    ['theatre', 'Theatre'],
     ['broadcast', 'Broadcast'],
     ['live', 'Live'],
     ['studio', 'Studio']
@@ -247,6 +245,14 @@ function itemPage(item) {
         crossHtml = `\n      <p class="cross-listed">${escapeHtml(item.crossListedLabel)} <a class="placeholder" href="${item.crossListedHref}">${escapeHtml(item.crossListedText)}</a></p>`;
     }
 
+    // Optional link out to the finished work itself, wherever it's actually
+    // hosted (Vimeo, YouTube, an article, etc.) -- client: "the ones that
+    // are online can be linked." Only rendered when set; nothing changes
+    // for items that don't have one yet.
+    const linkHtml = item.link
+        ? `\n    <p class="project-link"><a class="placeholder" href="${escapeHtml(item.link)}">View online →</a></p>`
+        : '';
+
     const navLinks = [`<a href="${section.backHref}">← ${escapeHtml(section.backLabel)}</a>`];
     if (item.prev) navLinks.push(`<a href="${item.prev.slug}.html">← ${escapeHtml(item.prev.title)}</a>`);
     if (item.next) navLinks.push(`<a href="${item.next.slug}.html">${escapeHtml(item.next.title)} →</a>`);
@@ -259,7 +265,7 @@ function itemPage(item) {
     <p class="eyebrow">${escapeHtml(section.breadcrumb)}</p>
     <h1>${escapeHtml(item.title)}</h1>
     ${figure}
-    <p class="copy">${escapeHtml(item.copy)}</p>
+    <p class="copy">${escapeHtml(item.copy)}</p>${linkHtml}
 ${detailList(item.details)}${crossHtml}
     <nav class="project-navigation" aria-label="Project navigation">
         ${navLinks.join('\n        ')}
@@ -384,7 +390,7 @@ function build() {
     ACCENT_COLOR = /^#[0-9a-fA-F]{6}$/.test(settings.accentColor || '') ? settings.accentColor : DEFAULT_ACCENT_COLOR;
 
     // Client-added top-level pages (content/sections/pages/) -- a plain
-    // folder collection like film/theatre/etc, just with a different field
+    // folder collection like film/broadcast/etc, just with a different field
     // shape (see schema.mjs). Reserved slugs are skipped defensively: the
     // admin API already blocks creating one, but hand-edited content could
     // still introduce one, and silently overwriting sound.html etc. would
@@ -399,8 +405,8 @@ function build() {
 
     NAV_ITEMS = [
         ['sound.html', 'Sound'],
-        ['curation-production.html', 'Curation & Production'],
-        ['cultural-projects.html', 'Cultural Projects'],
+        ['curation-production.html', 'Production & Curation'],
+        ['cultural-projects.html', 'Art & Culture Projects'],
         ...customPages.map(p => [`${p.slug}.html`, p.title]),
         ['about.html', 'About'],
         ['contact.html', 'Contact']
@@ -411,9 +417,10 @@ function build() {
         allFoldersData[key] = readFolder(key);
     });
 
-    // Chain prev/next within each folder independently (Kaya/Assimilate's
-    // primary folder is "cultural", so they chain with Frequency Shift /
-    // mau from nowhere there, and only *guest*-appear on Sound -> Theatre).
+    // Chain prev/next within each folder independently (Kaya/Assimilate
+    // live only in "cultural" now -- see AGENTS.md on Sound -> Theatre's
+    // removal -- so they chain with Frequency Shift / mau from nowhere
+    // there like everything else in that folder).
     Object.values(allFoldersData).forEach(chain);
 
     let itemCount = 0;
@@ -453,7 +460,7 @@ ${cards.map(itemCard).join('\n')}
   ${header('sound.html')}
   <main class="page">
     <p class="eyebrow">Sound</p>
-    <h1 class="hero-lede"><span class="accent">Sound design</span>, location recording, and audio engineering across film, theatre, broadcast, live, and studio work.</h1>
+    <h1 class="hero-lede"><span class="accent">Sound design</span>, location recording, and audio engineering across film, broadcast, live, and studio work.</h1>
 ${soundSections}
     ${FOOTER}
   </main>
@@ -466,13 +473,13 @@ ${soundSections}
     const { cards: curationCards } = gatherCards(allFoldersData, 'curation');
     write(
         'curation-production.html',
-        head('Curation & Production — Daisy Nduta', 'Curation and production work by Daisy Nduta.') +
+        head('Production & Curation — Daisy Nduta', 'Production and curation work by Daisy Nduta.') +
             `<body data-bg="curation">
   ${header('curation-production.html')}
   <main class="page">
-    <p class="eyebrow">Curation &amp; Production</p>
+    <p class="eyebrow">Production &amp; Curation</p>
     <h1 class="hero-lede">Producing, programming, and curating <span class="accent">live experiences</span> — from venue seasons to festival showcases.</h1>
-    <section class="section" aria-label="Curation and production credits">
+    <section class="section" aria-label="Production and curation credits">
       <div class="item-grid">
 ${curationCards.map(itemCard).join('\n')}
       </div>
@@ -488,13 +495,13 @@ ${curationCards.map(itemCard).join('\n')}
     const { cards: culturalCards } = gatherCards(allFoldersData, 'cultural');
     write(
         'cultural-projects.html',
-        head('Cultural Projects — Daisy Nduta', 'Longer-term, multidisciplinary, and community-rooted work by Daisy Nduta.') +
+        head('Art & Culture Projects — Daisy Nduta', 'Longer-term, multidisciplinary, and community-rooted work by Daisy Nduta.') +
             `<body data-bg="cultural">
   ${header('cultural-projects.html')}
   <main class="page">
-    <p class="eyebrow">Cultural Projects</p>
+    <p class="eyebrow">Art &amp; Culture Projects</p>
     <h1 class="hero-lede">Longer-term, multidisciplinary, and <span class="accent">community-rooted</span> work.</h1>
-    <section class="section" aria-label="Cultural project credits">
+    <section class="section" aria-label="Art and culture project credits">
       <div class="item-grid">
 ${culturalCards.map(itemCard).join('\n')}
       </div>
@@ -561,11 +568,17 @@ ${entryDots}
     const about = readJson('pages/about.json');
     // One curated phrase (or, for the paragraph that lists her four
     // practice areas, all four) picked by hand per paragraph -- not every
-    // paragraph needs one, see AGENTS.md.
+    // paragraph needs one, see AGENTS.md. Indexed by position, not content,
+    // so it silently goes fully out of sync if a paragraph is ever added or
+    // removed above it -- exactly what happened when the client deleted the
+    // original opening paragraph (2026-09-22): every remaining paragraph
+    // shifted up one slot, so every phrase here was being checked against
+    // the wrong paragraph and nothing accented at all. Re-synced 2026-09-23
+    // to the current 3-paragraph structure; the old opening paragraph's
+    // 'sound-first' accent has no home anymore and was dropped.
     const ABOUT_PARAGRAPH_ACCENTS = [
-        ['sound-first'],
         ['cultural producer'],
-        ['Sound', 'Film', 'Curation & Production', 'Cultural Projects'],
+        ['Sound', 'Film', 'Production & Curation', 'Art & Culture Projects'],
         []
     ];
     const paragraphs = about.paragraphs
