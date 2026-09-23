@@ -252,13 +252,13 @@ a.client-cloud__item:hover { border-bottom-color: currentColor; }
 }
 @media (prefers-reduced-motion: no-preference) {
     .entry-carousel .entry-card { transition: transform .8s cubic-bezier(.22, 1, .36, 1), opacity .5s ease; }
-    .entry-carousel .entry-card__body, .entry-carousel .entry-card__arrow { transition: opacity .35s ease; }
+    /* Text stays visible on every card now (peeking or active) -- only its
+       position animates, sliding up into its resting spot as a card
+       becomes active. Deliberately slow -- client: "the content of the
+       card should animate slowly up when it comes to the center." */
+    .entry-carousel .entry-card__body, .entry-carousel .entry-card__arrow { transition: transform .7s cubic-bezier(.22, 1, .36, 1); }
 }
 .entry-carousel .entry-card__media { aspect-ratio: 4 / 3; }
-/* Peeking (non-active) cards show the whole photo instead of a cropped
-   fill -- .entry-card__media's own background (set above) shows through
-   as the letterbox color. Set by script.js's render() via `abs !== 0`. */
-.entry-carousel .entry-card--peek .entry-card__media img { object-fit: contain; }
 .entry-carousel__controls { display: flex; align-items: center; justify-content: center; margin-top: 32px; }
 .entry-carousel__dots { display: flex; gap: 10px; }
 .entry-carousel__dot {

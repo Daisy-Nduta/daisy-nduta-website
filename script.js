@@ -405,27 +405,6 @@
     let timer = null;
     const prevDelta = new Array(total).fill(0);
 
-    // The slide/tilt into center takes .8s (see style.css), but the crop
-    // switch (peek's full image -> active's cropped fill) and caption
-    // fade-in used to fire the instant a card *started* becoming active --
-    // so the incoming card spent its whole approach already cropped and
-    // captioned, with no uncropped moment at all. Client: "don't show the
-    // image in full before showing the card text." Delaying just that
-    // reveal (not the slide itself) until the card's roughly arrived fixes
-    // the sequence: full image throughout the approach, crop + caption
-    // together once it settles into center.
-    const SETTLE_MS = 650;
-    const settleTimers = new Array(total).fill(null);
-
-    function revealAsActive(i) {
-        cards[i].classList.remove('entry-card--peek');
-        if (cardBodies[i]) {
-            cardBodies[i].style.opacity = '1';
-            cardBodies[i].setAttribute('aria-hidden', 'false');
-        }
-        if (cardArrows[i]) cardArrows[i].style.opacity = '1';
-    }
-
     function render() {
         const isMobile = mobileQuery.matches;
         const wrappedActive = ((active % total) + total) % total;
@@ -445,11 +424,6 @@
 
             const abs = Math.abs(delta);
             card.style.opacity = abs === 0 ? '1' : abs === 1 ? '.85' : abs === 2 ? '.5' : '0';
-            // The active card's image fills the frame edge-to-edge (cropped);
-            // every peeking card instead shows the whole photo uncropped --
-            // client: "for the cards that are not in the center, show the
-            // full image." See the .entry-card--peek rule in style.css.
-            card.classList.toggle('entry-card--peek', abs !== 0);
             // Cards have no natural stacking order of their own (no real
             // depth on mobile, and desktop's translateZ ordering can still
             // use a backstop) -- without this, whichever card is *later* in
@@ -466,41 +440,28 @@
             card.setAttribute('aria-hidden', abs === 0 ? 'false' : 'true');
             card.tabIndex = abs === 0 ? 0 : -1;
 
-            if (settleTimers[i]) {
-                clearTimeout(settleTimers[i]);
-                settleTimers[i] = null;
+            // Every card's image always fills its frame, centered or not --
+            // client: "when a card is not in the center, the image it has
+            // should fill the whole card." The label/title/summary and arrow
+            // stay visible on every card too now, peeking or not -- client:
+            // "make sure the text on the cards that are not in focus have
+            // the text content visible as well" (an earlier pass hid it on
+            // peeking cards entirely, then just faded it in on becoming
+            // active; both were wrong). What still changes with position is
+            // purely a *slide*: peeking cards' text sits 28px below its
+            // resting spot, sliding up to translateY(0) as a card becomes
+            // active -- "the content of the card should animate slowly up
+            // when it comes to the center." Already-dimmed via the parent
+            // .entry-card's own opacity falloff by distance (set just
+            // above), so peeking text reads as secondary without being
+            // invisible. The transform lives on .entry-card__body/
+            // .entry-card__arrow themselves (see style.css), separate from
+            // .entry-card's own big 3D transform.
+            if (cardBodies[i]) {
+                cardBodies[i].style.transform = abs === 0 ? 'translateY(0)' : 'translateY(28px)';
             }
-
-            if (abs !== 0) {
-                // Only the active card shows its label/title/summary text --
-                // with 4 fanned cards' text blocks all sitting in roughly the
-                // same lower band, they overlapped into an unreadable pile.
-                // Peeking cards keep just their image, which is what actually
-                // reads cleanly at an angle; the text only makes sense head-on.
-                // The active card's image fills the frame edge-to-edge
-                // (cropped); every peeking card instead shows the whole photo
-                // uncropped -- see the .entry-card--peek rule in style.css.
-                // Both flip immediately when *leaving* active -- only the
-                // reverse direction (becoming active) is deliberately
-                // delayed, below.
-                card.classList.add('entry-card--peek');
-                if (cardBodies[i]) {
-                    cardBodies[i].style.opacity = '0';
-                    cardBodies[i].setAttribute('aria-hidden', 'true');
-                }
-                if (cardArrows[i]) cardArrows[i].style.opacity = '0';
-            } else if (prevDelta[i] === 0 || wrapped || reduceMotion) {
-                // Already active, or arriving with no slide to wait out
-                // (a multi-step dot jump, or reduced-motion) -- reveal now.
-                revealAsActive(i);
-            } else {
-                // Becoming active via a normal one-step slide: keep showing
-                // the full image and hidden caption (still has 'entry-card--
-                // peek' from its last render) until the slide's roughly done.
-                settleTimers[i] = setTimeout(() => {
-                    settleTimers[i] = null;
-                    revealAsActive(i);
-                }, SETTLE_MS);
+            if (cardArrows[i]) {
+                cardArrows[i].style.transform = abs === 0 ? 'translateY(0)' : 'translateY(28px)';
             }
 
             if (wrapped) {
