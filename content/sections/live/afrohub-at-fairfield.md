@@ -10,7 +10,8 @@ details:
     value: '2020'
   - label: Artists
     value: 'Jazmaris, Alaariya, DJ Mai, Baasto, Elle Shimanda, Pookie'
-images: []
+images:
+  - images/uploads/crop-16.jpg
 ---
 Afrohub is an arts organisation and creative community space in Melbourne founded by Saba Alemayoh that showcases African Australian creatives, art, food, and culture
 They frequently collaborate with local councils, notably curated events for the Fairfield in Feb summer concert series at the Fairfield Amphitheatre along the Yarra River.
