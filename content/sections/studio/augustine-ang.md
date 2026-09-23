@@ -1,11 +1,14 @@
 ---
-title: Augustine Ang
+title: Heart & Brain album
 order: 1
 cardLabel: Mix Engineer
-cardSummary: Mix Engineer.
+cardSummary: Mix Engineer
 details:
+  - label: Artist
+    value: Augustine Ang
   - label: Role
     value: Mix Engineer
-images: []
+images:
+  - images/uploads/crop-15.jpg
 ---
-Tell us about this project — its story, setting, and the people who shaped it.
+
