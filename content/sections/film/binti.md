@@ -5,6 +5,7 @@ cardLabel: '2022'
 cardSummary: >-
   Location recordist. Dir. Sophie-Anne Ndagu. Selected — Melbourne International
   Film Festival.
+link: 'https://miff.com.au/festival-archive/films/33029/binti'
 details:
   - label: Role
     value: Location Recordist

@@ -3,6 +3,7 @@ title: Blackwood
 order: 4
 cardLabel: '2019'
 cardSummary: Sound Designer. Dir. Kalu Oji.
+link: 'https://vimeo.com/1104638065?share=copy&fl=cl&fe=ci'
 details:
   - label: Role
     value: Sound Designer
