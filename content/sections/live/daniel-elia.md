@@ -1,8 +1,8 @@
 ---
 title: Daniel Elia
-order: 2
+order: 4
 cardLabel: '2020'
-cardSummary: 'Live Engineer. Daniel Elia, Banta, Rara Zulu, Ijale.'
+cardSummary: 'Live Engineer. Arists: Daniel Elia, Banta, Rara Zulu, Ijale.'
 details:
   - label: Role
     value: Live Engineer
@@ -10,6 +10,7 @@ details:
     value: '2020'
   - label: Artists
     value: 'Daniel Elia, Banta, Rara Zulu, Ijale'
-images: []
+images:
+  - images/uploads/crop-13.jpg
 ---
-Tell us about this show — its story, setting, and the people who shaped it.
+
