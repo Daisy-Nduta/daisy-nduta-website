@@ -265,7 +265,7 @@ function itemPage(item) {
     <p class="eyebrow">${escapeHtml(section.breadcrumb)}</p>
     <h1>${escapeHtml(item.title)}</h1>
     ${figure}
-    <p class="copy">${escapeHtml(item.copy)}</p>${linkHtml}
+    <p class="project-copy">${escapeHtml(item.copy)}</p>${linkHtml}
 ${detailList(item.details)}${crossHtml}
     <nav class="project-navigation" aria-label="Project navigation">
         ${navLinks.join('\n        ')}

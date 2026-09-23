@@ -128,6 +128,20 @@ h1.hero-lede {
 }
 .copy + .copy { margin-top: 24px; }
 
+/* A project's description, specifically -- scoped separately from .copy
+   (About/Contact's intro, still meant to read as a large display-style
+   lede) since client feedback was about this one context: "more horizontal
+   than flowing downwards, and maybe a smaller font." Wider measure + a
+   normal body-copy size reads as a paragraph across the page rather than
+   a narrow tall column of large text. */
+.project-copy {
+    max-width: 780px;
+    margin-top: 32px;
+    font-size: 18px;
+    line-height: 1.55;
+    color: rgba(32, 30, 31, .68);
+}
+
 .image-panel {
     display: flex;
     align-items: center;

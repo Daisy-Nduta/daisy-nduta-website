@@ -3,6 +3,7 @@ title: Mwakenya
 order: 1
 cardLabel: '2025'
 cardSummary: Location recordist. Dir. Musila Munuve.
+link: ''
 details:
   - label: Role
     value: Location Recordist
