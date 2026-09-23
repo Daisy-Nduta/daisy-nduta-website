@@ -2,7 +2,7 @@
 title: In The Beginning
 order: 5
 cardLabel: '2019'
-cardSummary: 'Sound Designer, Editor & Mixer. Dir. Sophie-Anne Mwangi.'
+cardSummary: Sound Designer & Mixer. Dir. Sophie-Anne Mwangi.
 details:
   - label: Role
     value: 'Sound Designer, Editor & Mixer'
@@ -10,6 +10,7 @@ details:
     value: Sophie-Anne Mwangi
   - label: Year
     value: '2019'
-images: []
+images:
+  - images/uploads/in-the-beginning.jpg
 ---
-Tell us about In The Beginning — its story, setting, and the people who shaped it.
+

@@ -10,6 +10,7 @@ details:
     value: Mattie Mcleod
   - label: Year
     value: '2020'
-images: []
+images:
+  - images/uploads/touie.jpg
 ---
-Tell us about Touie — its story, setting, and the people who shaped it.
+

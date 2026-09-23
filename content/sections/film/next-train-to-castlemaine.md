@@ -12,6 +12,7 @@ details:
     value: '2019'
   - label: Selected
     value: Golden State Film Festival
-images: []
+images:
+  - images/uploads/crop-11.jpg
 ---
-Tell us about Next Train To Castlemaine — its story, setting, and the people who shaped it.
+"Next Train from Castlemaine" is a bittersweet and emotional relationship drama about an old, recently widowed man, Ronan, who battles to keep his independence and is forced to make decisions that might change the course of the rest of his life as his daughter, Daisy, is moving him into a nursing home.

@@ -11,16 +11,16 @@
     },
     {
       "key": "curation",
-      "label": "02 — Curation & Production",
-      "title": "Curation & Production",
+      "label": "02 — Production & Curation",
+      "title": "Production & Curation",
       "summary": "Producing, programming, and curating live experiences — from venue seasons to festival showcases.",
       "href": "curation-production.html",
       "image": "images/uploads/crop-5.jpg"
     },
     {
       "key": "cultural",
-      "label": "03 — Cultural Projects",
-      "title": "Cultural Projects",
+      "label": "03 — Art & Culture Projects",
+      "title": "Art & Culture Projects",
       "summary": "Longer-term, multidisciplinary, and community-rooted work.",
       "href": "cultural-projects.html",
       "image": "images/uploads/ti0a9382.jpg"
