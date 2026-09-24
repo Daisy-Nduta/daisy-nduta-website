@@ -2,7 +2,7 @@
 title: Kilele Summit
 order: 1
 cardLabel: Event Producer
-cardSummary: Producer — Showcases
+cardSummary: 'Artists: Odd Okoddo, Elsy Wameyo, Auntie Flo, Mxshi Mo, MC Yallah'
 link: 'https://kilelesummit.org'
 details:
   - label: Role
