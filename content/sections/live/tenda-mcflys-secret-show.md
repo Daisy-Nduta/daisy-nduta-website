@@ -3,6 +3,7 @@ title: Tenda Mcfly's Secret Show
 order: 2
 cardLabel: '2020'
 cardSummary: 'Live Engineer. Tenda Mcfly, Zii Music, Zainab, Flick, Micha.'
+link: 'https://taku.com.au/sacred-joy-producing-shows/'
 details:
   - label: Role
     value: Live Engineer

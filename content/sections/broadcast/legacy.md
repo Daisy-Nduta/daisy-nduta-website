@@ -3,7 +3,7 @@ title: Legacy
 order: 3
 cardLabel: '2020'
 cardSummary: 'Location Recordist & Post-Production Engineer, in-house at Grand Bay Media.'
-link: ''
+link: 'https://youtu.be/EasWa_NkK_g?si=8SMQkqmImnymCFrL'
 details:
   - label: Role
     value: 'Location Recordist & Post-Production Engineer, in-house at Grand Bay Media'
