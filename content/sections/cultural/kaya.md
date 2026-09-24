@@ -2,9 +2,11 @@
 title: Kaya
 order: 5
 cardLabel: '2018'
-cardSummary: |-
+cardSummary: >
+  An audio-visual and immersive performance exploring diverse perspectives on
+  home.
+
   Creator & Producer: Daisy Nduta. 
-  Sound Recording, Editor & Design.
 link: ''
 details:
   - label: Producer

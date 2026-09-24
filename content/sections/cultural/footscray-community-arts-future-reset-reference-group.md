@@ -5,7 +5,8 @@ cardLabel: '2023'
 cardSummary: Creative consultant
 link: ''
 details: []
-images: []
+images:
+  - images/uploads/crop-35.jpg
 alsoShowOn: ''
 crossListedLabel: ''
 crossListedHref: ''

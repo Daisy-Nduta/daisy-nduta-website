@@ -1,7 +1,7 @@
 ---
 title: Kilele Summit
 order: 1
-cardLabel: Freelance Producer
+cardLabel: Event Producer
 cardSummary: Producer — Showcases
 link: 'https://kilelesummit.org'
 details:

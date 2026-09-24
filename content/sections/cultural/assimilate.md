@@ -2,7 +2,9 @@
 title: Assimilate
 order: 4
 cardLabel: '2019'
-cardSummary: 'Sound Recording, Design & Mix. Producer: Daisy Nduta.'
+cardSummary: >-
+  Multi-disciplinary performance blending movement, soundscapes, and visuals to
+  explore cultural assimilation through the voices of four women.
 link: 'https://youtu.be/Ihdpfof550g?si=Q4TbAzGH9C6B92jA'
 details:
   - label: Creator & Producer
@@ -23,4 +25,5 @@ crossListedLabel: ''
 crossListedHref: ''
 crossListedText: ''
 ---
-Assimilate is a storytelling-driven piece that uses movement, song, soundscapes and visuals to artistically represent the assimilation experience through the voices of 4 women.
+Assimilate is a storytelling-driven piece that uses movement, song, soundscapes and visuals to represent what assimilation is versus integration. It does this by exploring themes of language, identity, belonging, migration, detachment and community.
+The show explored these themes through the voice of four women.
