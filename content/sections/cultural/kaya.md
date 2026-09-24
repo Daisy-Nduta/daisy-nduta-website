@@ -1,6 +1,6 @@
 ---
 title: Kaya
-order: 3
+order: 5
 cardLabel: '2018'
 cardSummary: |-
   Creator & Producer: Daisy Nduta. 
