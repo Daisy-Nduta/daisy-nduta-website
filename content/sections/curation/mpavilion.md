@@ -1,7 +1,7 @@
 ---
 title: Meeting Place - MPavilion
 order: 3
-cardLabel: Curation & Production
+cardLabel: Curator & Producer
 cardSummary: 'Artists: Cool Out Sun, Soli, Amadou and African Love Grass'
 link: 'https://mpavilion.org'
 details:

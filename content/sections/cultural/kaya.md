@@ -25,4 +25,4 @@ crossListedLabel: ''
 crossListedHref: ''
 crossListedText: ''
 ---
-“Kaya" means home in Digo (coastal tribe in Kenya).Home is often alluded to as a house which is related but not the same. Kaya gives different perspectives of what home looks like for different people through an audio-visual and a live immersive performance.
+“Kaya" means home in Digo (coastal tribe in Kenya). Home is often alluded to as a house which is related but not the same. Kaya gives different perspectives of what home looks like for different people through an audio-visual and a live immersive performance.

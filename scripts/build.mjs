@@ -242,7 +242,7 @@ function itemPage(item) {
 
     let crossHtml = '';
     if (item.crossListedHref) {
-        crossHtml = `\n      <p class="cross-listed">${escapeHtml(item.crossListedLabel)} <a class="placeholder" href="${item.crossListedHref}">${escapeHtml(item.crossListedText)}</a></p>`;
+        crossHtml = `\n      <p class="cross-listed">${escapeHtml(item.crossListedLabel)} <a class="placeholder" href="${item.crossListedHref}"${externalAttrs(item.crossListedHref)}>${escapeHtml(item.crossListedText)}</a></p>`;
     }
 
     // Optional link out to the finished work itself, wherever it's actually
@@ -250,7 +250,7 @@ function itemPage(item) {
     // are online can be linked." Only rendered when set; nothing changes
     // for items that don't have one yet.
     const linkHtml = item.link
-        ? `\n    <p class="project-link"><a class="placeholder" href="${escapeHtml(item.link)}">View online →</a></p>`
+        ? `\n    <p class="project-link"><a class="placeholder" href="${escapeHtml(item.link)}"${externalAttrs(item.link)}>View online →</a></p>`
         : '';
 
     const navLinks = [`<a href="${section.backHref}">← ${escapeHtml(section.backLabel)}</a>`];
@@ -265,7 +265,9 @@ function itemPage(item) {
     <p class="eyebrow">${escapeHtml(section.breadcrumb)}</p>
     <h1>${escapeHtml(item.title)}</h1>
     ${figure}
-    <p class="project-copy">${escapeHtml(item.copy)}</p>${linkHtml}
+    <div class="project-copy">
+${projectParagraphs(item.copy)}
+    </div>${linkHtml}
 ${detailList(item.details)}${crossHtml}
     <nav class="project-navigation" aria-label="Project navigation">
         ${navLinks.join('\n        ')}
@@ -314,6 +316,27 @@ function gatherCards(allFoldersData, key) {
 // Client-authored pages store body copy as one plain-text blob (not an
 // array of paragraphs like About's structured JSON) -- split on blank
 // lines so a page can still read as more than one paragraph.
+// A project description is split on *any* line break, not just blank lines
+// (unlike client Pages below) -- the client separates paragraphs with a
+// single Enter in the admin textarea as often as with a blank line.
+function projectParagraphs(text) {
+    return String(text ?? '')
+        .split(/\n+/)
+        .map(p => p.trim())
+        .filter(Boolean)
+        .map(p => `        <p>${escapeHtml(p)}</p>`)
+        .join('\n');
+}
+
+// Client-entered links to other sites open in a new tab so visitors don't
+// lose their place on the portfolio. Internal .html links and mailto:/tel:
+// stay as normal same-tab links.
+function externalAttrs(url) {
+    return /^https?:\/\//i.test(String(url ?? '').trim())
+        ? ' target="_blank" rel="noopener noreferrer"'
+        : '';
+}
+
 function paragraphsFromBody(text) {
     return String(text ?? '')
         .split(/\n\s*\n/)
@@ -597,7 +620,7 @@ ${entryDots}
         .filter(c => c.name)
         .map(c =>
             c.url
-                ? `<a class="client-cloud__item" href="${escapeHtml(c.url)}">${escapeHtml(c.name)}</a>`
+                ? `<a class="client-cloud__item" href="${escapeHtml(c.url)}"${externalAttrs(c.url)}>${escapeHtml(c.name)}</a>`
                 : `<span class="client-cloud__item">${escapeHtml(c.name)}</span>`
         )
         .join('\n        ');
@@ -653,7 +676,7 @@ ${residencyRows}
     const contactRows = contact.details
         .map(
             d =>
-                `        <li><span>${escapeHtml(d.label)}</span><span><a class="placeholder" href="${escapeHtml(d.href)}">${escapeHtml(d.linkText)}</a> <em>${escapeHtml(d.note)}</em></span></li>`
+                `        <li><span>${escapeHtml(d.label)}</span><span><a class="placeholder" href="${escapeHtml(d.href)}"${externalAttrs(d.href)}>${escapeHtml(d.linkText)}</a> <em>${escapeHtml(d.note)}</em></span></li>`
         )
         .join('\n');
 

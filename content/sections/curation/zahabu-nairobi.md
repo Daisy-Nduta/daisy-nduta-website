@@ -6,7 +6,7 @@ cardSummary: Programming & Venue management
 link: 'https://zahabu.co.ke/'
 details:
   - label: Role
-    value: 'Programming, Ass. venue manager'
+    value: 'Programming, Assistant Venue Manager'
 images:
   - images/uploads/crop-36.jpg
 ---

@@ -142,6 +142,9 @@ h1.hero-lede {
     color: rgba(32, 30, 31, .68);
 }
 
+.project-copy p { margin: 0; }
+.project-copy p + p { margin-top: 1em; }
+
 .image-panel {
     display: flex;
     align-items: center;

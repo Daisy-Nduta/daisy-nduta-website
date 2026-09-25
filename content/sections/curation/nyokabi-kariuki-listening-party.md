@@ -1,7 +1,7 @@
 ---
 title: Peace Places Listening Party - Nyokabi Kariuki
 order: 4
-cardLabel: Event producer
+cardLabel: Event Producer
 cardSummary: 'Artist: Nyokabi Kariuki '
 link: ''
 details:
