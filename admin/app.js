@@ -1138,7 +1138,7 @@
           <input type="password" id="f-gc-token" autocomplete="off" spellcheck="false" style="flex:1;">
           <button class="btn btn--primary" id="gc-connect-btn">Connect</button>
         </div>
-        <p class="stats-note">The key is saved only on this computer. It is never published to the website or GitHub.</p>
+        <p class="stats-note">The key is stored in this Mac’s Keychain — not in the project folder — and is never published to the website or GitHub.</p>
       </div>`;
 
     const input = document.getElementById('f-gc-token');

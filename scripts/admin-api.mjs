@@ -7,7 +7,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import express from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
@@ -279,24 +279,55 @@ export function createAdminApi(ROOT) {
     // ---- analytics (GoatCounter) ----
     //
     // The CMS's "Site Visits" page reads stats from GoatCounter's API through
-    // these routes, so the API token never reaches the browser. The token is
-    // a read-only GoatCounter API key, kept in .deploy/goatcounter-token --
-    // gitignored like the deploy key next to it, so it travels with a copied
-    // project folder but is never committed or published. The static file
-    // server doesn't serve dotfile folders, so it isn't reachable over HTTP.
+    // these routes, so the API key never reaches the browser. The key (a
+    // read-only GoatCounter API key) lives in the Mac's login Keychain, not
+    // in the project folder -- macOS encrypts it at rest, and copying or
+    // sharing the folder can never leak it. Stored/read via the built-in
+    // `security` tool; the key goes in over stdin, never as a command-line
+    // argument, so it doesn't show up in the process list.
 
-    const TOKEN_FILE = path.join(ROOT, '.deploy', 'goatcounter-token');
+    const KEYCHAIN_SERVICE = 'Daisy Nduta CMS — GoatCounter API key';
+    const KEYCHAIN_ACCOUNT = 'goatcounter';
+    // Where the key was kept before it moved to the Keychain (2026-09-25);
+    // readToken() migrates it over and deletes the file if one is found.
+    const LEGACY_TOKEN_FILE = path.join(ROOT, '.deploy', 'goatcounter-token');
     const ANALYTICS_RANGES = [7, 30, 90];
     const ANALYTICS_CACHE_MS = 5 * 60 * 1000;
     const analyticsCache = new Map();
 
-    function readToken() {
+    function keychainRead() {
+        return new Promise(resolve => {
+            execFile('security', ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT, '-w'], (error, stdout) => {
+                resolve(error ? null : stdout.trim() || null);
+            });
+        });
+    }
+
+    function keychainWrite(token) {
+        return new Promise((resolve, reject) => {
+            // -U updates an existing entry; a trailing bare -w makes
+            // `security` read the password (typed twice) from stdin.
+            const child = spawn('security', ['add-generic-password', '-U', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT, '-w'], { stdio: ['pipe', 'ignore', 'ignore'] });
+            child.on('error', reject);
+            child.on('close', code => (code === 0 ? resolve() : reject(new Error('Couldn’t save the key to the Mac’s Keychain.'))));
+            child.stdin.end(`${token}\n${token}\n`);
+        });
+    }
+
+    function keychainDelete() {
+        return new Promise(resolve => {
+            execFile('security', ['delete-generic-password', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT], () => resolve());
+        });
+    }
+
+    async function readToken() {
         if (process.env.GOATCOUNTER_TOKEN) return process.env.GOATCOUNTER_TOKEN.trim();
-        try {
-            return fs.readFileSync(TOKEN_FILE, 'utf8').trim() || null;
-        } catch {
-            return null;
+        if (fs.existsSync(LEGACY_TOKEN_FILE)) {
+            const legacy = fs.readFileSync(LEGACY_TOKEN_FILE, 'utf8').trim();
+            if (legacy) await keychainWrite(legacy);
+            fs.rmSync(LEGACY_TOKEN_FILE, { force: true });
         }
+        return keychainRead();
     }
 
     async function goatcounter(endpoint, params, token) {
@@ -331,8 +362,8 @@ export function createAdminApi(ROOT) {
         return { start: start.toISOString().replace('.000', ''), end: end.toISOString().replace('.000', '') };
     }
 
-    router.get('/analytics/status', (req, res) => {
-        res.json({ connected: Boolean(readToken()), dashboardUrl: GOATCOUNTER_SITE });
+    router.get('/analytics/status', async (req, res) => {
+        res.json({ connected: Boolean(await readToken()), dashboardUrl: GOATCOUNTER_SITE });
     });
 
     router.put('/analytics/token', async (req, res) => {
@@ -344,20 +375,23 @@ export function createAdminApi(ROOT) {
         } catch (error) {
             return res.status(error.status === 401 ? 400 : 502).json({ error: error.message });
         }
-        fs.mkdirSync(path.dirname(TOKEN_FILE), { recursive: true });
-        fs.writeFileSync(TOKEN_FILE, `${token}\n`, { mode: 0o600 });
+        try {
+            await keychainWrite(token);
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
         analyticsCache.clear();
         res.json({ ok: true });
     });
 
-    router.delete('/analytics/token', (req, res) => {
-        fs.rmSync(TOKEN_FILE, { force: true });
+    router.delete('/analytics/token', async (req, res) => {
+        await keychainDelete();
         analyticsCache.clear();
         res.json({ ok: true });
     });
 
     router.get('/analytics/summary', async (req, res) => {
-        const token = readToken();
+        const token = await readToken();
         if (!token) return res.status(400).json({ error: 'not-connected' });
         const days = ANALYTICS_RANGES.includes(Number(req.query.days)) ? Number(req.query.days) : 30;
 
