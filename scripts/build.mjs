@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { RESERVED_PAGE_SLUGS, DEFAULT_ACCENT_COLOR, GOATCOUNTER_SITE } from './schema.mjs';
+import { ensureImageVariants, readImageManifest } from './images.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
@@ -31,6 +32,34 @@ let NAV_ITEMS = [
 // via content/pages/settings.json, read fresh at the top of build() below.
 // head() reads this module-level binding the same way it reads NAV_ITEMS.
 let ACCENT_COLOR = DEFAULT_ACCENT_COLOR;
+
+// The live site's address -- used for absolute URLs in link-preview tags,
+// canonical links, and sitemap.xml (all of which need full URLs).
+const SITE_URL = 'https://daisynduta.com';
+
+// Resized copies of uploaded photos (scripts/images.mjs), read fresh at the
+// top of build(), plus the fallback link-preview image (the first Home card
+// photo) for pages that have no photo of their own.
+let IMAGE_MANIFEST = {};
+let DEFAULT_SHARE_IMAGE = '';
+let HOME_CARDS = [];
+
+// A Home card's photo (single `image`, or the first of `images`), used as
+// the link-preview picture for the section page that card leads to.
+function homeCardImage(key) {
+    const card = HOME_CARDS.find(c => c.key === key);
+    if (!card) return '';
+    return Array.isArray(card.images) ? card.images.filter(Boolean)[0] || '' : card.image || '';
+}
+
+// How wide each kind of image slot is actually displayed, so the browser
+// can pick the smallest resized copy that still looks sharp.
+const IMAGE_SIZES = {
+    itemCard: '(max-width: 700px) 100vw, 400px',
+    entryCard: '(max-width: 700px) 92vw, 560px',
+    gallery: '(max-width: 700px) 82vw, 680px',
+    portrait: '(max-width: 700px) 100vw, 600px'
+};
 
 // folder key (content/sections/<key>/) -> where it lives on the site
 const TOP_SECTIONS = {
@@ -143,7 +172,11 @@ function chain(items) {
     });
 }
 
-function head(title, description) {
+// `page` is the generated file's name ('' for the home page); `image` is an
+// optional images/uploads/... path used as that page's link-preview picture.
+function head(title, description, page = '', image = '') {
+    const url = `${SITE_URL}/${page}`;
+    const shareImage = shareImageUrl(image || DEFAULT_SHARE_IMAGE);
     return `<!doctype html>
 <html lang="en">
 <head>
@@ -151,6 +184,14 @@ function head(title, description) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="${escapeHtml(description)}">
   <title>${escapeHtml(title)}</title>
+  <link rel="canonical" href="${escapeHtml(url)}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Daisy Nduta">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(description)}">
+  <meta property="og:url" content="${escapeHtml(url)}">${shareImage ? `
+  <meta property="og:image" content="${escapeHtml(shareImage)}">` : ''}
+  <meta name="twitter:card" content="${shareImage ? 'summary_large_image' : 'summary'}">
   <link rel="icon" href="images/favicon.ico" sizes="any">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
@@ -186,9 +227,44 @@ function detailList(details) {
     return `      <ul class="detail-list">\n${rows}\n      </ul>`;
 }
 
-function mediaBlock(className, image, alt) {
+// srcset/sizes for an uploaded photo, from its resized copies (see
+// scripts/images.mjs). Photos without copies (GIFs, or ones smaller than
+// the smallest copy) just get a plain src.
+function srcsetFor(src) {
+    const entry = IMAGE_MANIFEST[String(src).replace(/^images\/uploads\//, '')];
+    if (!entry || !Object.keys(entry.variants).length) return '';
+    return [...Object.entries(entry.variants).map(([w, rel]) => `${rel} ${w}w`), `${src} ${entry.width}w`].join(', ');
+}
+
+// Attributes for one <img>. Images that start off-screen get
+// loading="lazy" so they're only fetched as the visitor scrolls to them.
+function imgAttrs(src, alt, sizes, { lazy = true } = {}) {
+    const srcset = srcsetFor(src);
+    return `src="${escapeHtml(src)}"${srcset ? ` srcset="${escapeHtml(srcset)}" sizes="${sizes}"` : ''} alt="${escapeHtml(alt)}"${lazy ? ' loading="lazy"' : ''} decoding="async"`;
+}
+
+// Absolute URL for a link-preview image -- the 1400px copy when there is
+// one (plenty for previews, much lighter than the original).
+function shareImageUrl(src) {
+    if (!src) return '';
+    const entry = IMAGE_MANIFEST[String(src).replace(/^images\/uploads\//, '')];
+    const rel = (entry && (entry.variants[1400] || entry.variants[800])) || src;
+    return `${SITE_URL}/${rel}`;
+}
+
+// Plain-text page description for search results and link previews: the
+// start of the item's own write-up, unless it's still the "Tell us
+// about..." placeholder, in which case the card summary.
+function describe(copy, fallback) {
+    const text = String(copy || '').replace(/\s+/g, ' ').trim();
+    if (!text || /^Tell us about/i.test(text)) return fallback;
+    if (text.length <= 160) return text;
+    return `${text.slice(0, 157).replace(/\s+\S*$/, '')}…`;
+}
+
+function mediaBlock(className, image, alt, sizes, options) {
     if (image) {
-        return `<div class="${className}"><img src="${escapeHtml(image)}" alt="${escapeHtml(alt)}"></div>`;
+        return `<div class="${className}"><img ${imgAttrs(image, alt, sizes, options)}></div>`;
     }
     return `<div class="${className}"><p>Image — pending</p></div>`;
 }
@@ -201,14 +277,16 @@ function mediaBlock(className, image, alt) {
 // single `image` string field.
 function entryCardMedia(card) {
     if (!Array.isArray(card.images)) {
-        return mediaBlock('entry-card__media', card.image, card.title);
+        return mediaBlock('entry-card__media', card.image, card.title, IMAGE_SIZES.entryCard, { lazy: false });
     }
     const list = card.images.filter(Boolean);
     if (list.length === 0) {
         return `<div class="entry-card__media"><p>Image — pending</p></div>`;
     }
-    const dataAttr = list.length > 1 ? ` data-images="${escapeHtml(JSON.stringify(list))}"` : '';
-    return `<div class="entry-card__media"><img src="${escapeHtml(list[0])}" alt="${escapeHtml(card.title)}"${dataAttr}></div>`;
+    // Each option carries its own srcset, so script.js can swap both.
+    const options = list.map(src => ({ src, srcset: srcsetFor(src) }));
+    const dataAttr = list.length > 1 ? ` data-images="${escapeHtml(JSON.stringify(options))}"` : '';
+    return `<div class="entry-card__media"><img ${imgAttrs(list[0], card.title, IMAGE_SIZES.entryCard, { lazy: false })}${dataAttr}></div>`;
 }
 
 // A credit/project or client-added page can carry several images now (a
@@ -221,13 +299,15 @@ function imageGallery(images, alt, pendingText) {
     if (list.length === 0) {
         return `<figure class="image-panel"><p>${escapeHtml(pendingText)}</p></figure>`;
     }
-    const imgs = list.map(src => `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`).join('\n        ');
+    // The first photo is at the top of the page; the rest are further along
+    // the side-scrolling row, so they can wait until needed.
+    const imgs = list.map((src, i) => `<img ${imgAttrs(src, alt, IMAGE_SIZES.gallery, { lazy: i > 0 })}>`).join('\n        ');
     return `<div class="image-gallery">\n        ${imgs}\n      </div>`;
 }
 
 function itemCard(item) {
     return `      <a class="item-card" href="${item.slug}.html">
-        ${mediaBlock('item-card__media', (item.images || [])[0], item.title)}
+        ${mediaBlock('item-card__media', (item.images || [])[0], item.title, IMAGE_SIZES.itemCard)}
         <div class="item-card__body">
           <p class="label">${escapeHtml(item.cardLabel)}</p>
           <h3>${accentLastWord(item.title)}</h3>
@@ -259,7 +339,12 @@ function itemPage(item) {
     if (item.next) navLinks.push(`<a href="${item.next.slug}.html">${escapeHtml(item.next.title)} →</a>`);
 
     return (
-        head(`${item.title} — Daisy Nduta`, `${item.title} — ${section.breadcrumb} — Daisy Nduta.`) +
+        head(
+            `${item.title} — Daisy Nduta`,
+            describe(item.copy, item.cardSummary ? `${item.title} — ${item.cardSummary}` : `${item.title} — ${section.breadcrumb} — Daisy Nduta.`),
+            `${item.slug}.html`,
+            (item.images || [])[0]
+        ) +
         `<body data-bg="${section.bg}">
   ${header(section.page)}
   <main class="page project-page">
@@ -352,7 +437,7 @@ function customPageHtml(page) {
     const figure = images.length ? imageGallery(images, page.title, '') : '';
     const body = paragraphsFromBody(page.copy) || '        <p class="copy">Content coming soon.</p>';
     return (
-        head(`${page.title} — Daisy Nduta`, `${page.title} — Daisy Nduta.`) +
+        head(`${page.title} — Daisy Nduta`, describe(page.copy, `${page.title} — Daisy Nduta.`), `${page.slug}.html`, images[0]) +
         `<body>
   ${header(`${page.slug}.html`)}
   <main class="page">
@@ -412,6 +497,10 @@ function build() {
         settings = {};
     }
     ACCENT_COLOR = /^#[0-9a-fA-F]{6}$/.test(settings.accentColor || '') ? settings.accentColor : DEFAULT_ACCENT_COLOR;
+
+    IMAGE_MANIFEST = readImageManifest(ROOT);
+    HOME_CARDS = readJson('pages/home.json').cards || [];
+    DEFAULT_SHARE_IMAGE = HOME_CARDS.map(c => homeCardImage(c.key)).find(Boolean) || '';
 
     // Client-added top-level pages (content/sections/pages/) -- a plain
     // folder collection like film/broadcast/etc, just with a different field
@@ -479,7 +568,7 @@ ${cards.map(itemCard).join('\n')}
 
     write(
         'sound.html',
-        head('Sound — Daisy Nduta', 'Sound design, location recording, and audio engineering by Daisy Nduta.') +
+        head('Sound — Daisy Nduta', 'Sound design, location recording, and audio engineering by Daisy Nduta.', 'sound.html', homeCardImage('sound')) +
             `<body data-bg="sound">
   ${header('sound.html')}
   <main class="page">
@@ -497,7 +586,7 @@ ${soundSections}
     const { cards: curationCards } = gatherCards(allFoldersData, 'curation');
     write(
         'curation-production.html',
-        head('Production & Curation — Daisy Nduta', 'Production and curation work by Daisy Nduta.') +
+        head('Production & Curation — Daisy Nduta', 'Production and curation work by Daisy Nduta.', 'curation-production.html', homeCardImage('curation')) +
             `<body data-bg="curation">
   ${header('curation-production.html')}
   <main class="page">
@@ -519,7 +608,7 @@ ${curationCards.map(itemCard).join('\n')}
     const { cards: culturalCards } = gatherCards(allFoldersData, 'cultural');
     write(
         'cultural-projects.html',
-        head('Art & Culture Projects — Daisy Nduta', 'Longer-term, multidisciplinary, and community-rooted work by Daisy Nduta.') +
+        head('Art & Culture Projects — Daisy Nduta', 'Longer-term, multidisciplinary, and community-rooted work by Daisy Nduta.', 'cultural-projects.html', homeCardImage('cultural')) +
             `<body data-bg="cultural">
   ${header('cultural-projects.html')}
   <main class="page">
@@ -567,7 +656,7 @@ ${culturalCards.map(itemCard).join('\n')}
 
     write(
         'index.html',
-        head('Daisy Nduta', 'Daisy Nduta — Nairobi-based sound designer, location recordist, and cultural producer.') +
+        head('Daisy Nduta', home.tagline ? `Daisy Nduta — ${home.tagline}` : 'Daisy Nduta — Nairobi-based sound designer, location recordist, and cultural producer.', '') +
             `<body>
   <main class="page page--home">
     <h1 class="home-wordmark">${accentLastWord('Daisy Nduta')}</h1>${homeTagline}
@@ -609,7 +698,7 @@ ${entryDots}
         .map((p, i) => `        <p class="copy">${applyAccents(p, ABOUT_PARAGRAPH_ACCENTS[i])}</p>`)
         .join('\n');
     const portraitFigure = about.portraitImage
-        ? `<figure class="image-panel"><img src="${escapeHtml(about.portraitImage)}" alt="Daisy Nduta"></figure>`
+        ? `<figure class="image-panel"><img ${imgAttrs(about.portraitImage, 'Daisy Nduta', IMAGE_SIZES.portrait, { lazy: false })}></figure>`
         : `<figure class="image-panel"><p>${escapeHtml(about.portraitPlaceholder)}</p></figure>`;
     const awardsRows = about.awards.map(a => `        <li><span>${escapeHtml(a.year)}</span><span>${escapeHtml(a.text)}</span></li>`).join('\n');
     const residencyRows = about.residencies.map(r => `        <li><span>${escapeHtml(r.year)}</span><span>${escapeHtml(r.text)}</span></li>`).join('\n');
@@ -628,7 +717,7 @@ ${entryDots}
 
     write(
         'about.html',
-        head(`About — Daisy Nduta`, 'About Daisy Nduta — sound designer, location recordist, and cultural producer.') +
+        head(`About — Daisy Nduta`, 'About Daisy Nduta — sound designer, location recordist, and cultural producer.', 'about.html', about.portraitImage || homeCardImage('about')) +
             `<body>
   ${header('about.html')}
   <main class="page">
@@ -683,7 +772,7 @@ ${residencyRows}
 
     write(
         'contact.html',
-        head('Contact — Daisy Nduta', 'Get in touch with Daisy Nduta.') +
+        head('Contact — Daisy Nduta', 'Get in touch with Daisy Nduta.', 'contact.html', homeCardImage('contact')) +
             `<body>
   ${header('contact.html')}
   <main class="page">
@@ -706,10 +795,36 @@ ${contactRows}
 `
     );
 
+    // ---- sitemap.xml + robots.txt ----
+    // Every public page, so search engines can find each project directly.
+    // admin/ and publish.html are the local Content Manager's own pages --
+    // useless on the live site, so crawlers are asked to skip them.
+    const sitemapPages = ['', 'sound.html', 'curation-production.html', 'cultural-projects.html', 'about.html', 'contact.html', ...allSlugs.map(slug => `${slug}.html`)];
+    write(
+        'sitemap.xml',
+        `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapPages.map(page => `  <url><loc>${SITE_URL}/${page}</loc></url>`).join('\n')}
+</urlset>
+`
+    );
+    write(
+        'robots.txt',
+        `User-agent: *
+Disallow: /admin/
+Disallow: /publish.html
+
+Sitemap: ${SITE_URL}/sitemap.xml
+`
+    );
+
     console.log(`Built ${itemCount} item pages + ${customPages.length} custom page(s) + 6 core pages.`);
 }
 
 export { build };
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
-if (isMain) build();
+if (isMain) {
+    await ensureImageVariants(ROOT);
+    build();
+}

@@ -14,16 +14,35 @@ import { execFile } from 'node:child_process';
 import express from 'express';
 import chokidar from 'chokidar';
 import { build } from './scripts/build.mjs';
+import { ensureImageVariants } from './scripts/images.mjs';
 import { createAdminApi } from './scripts/admin-api.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 8080;
 
-function runBuild(reason) {
+// Makes any missing resized photo copies (scripts/images.mjs), then
+// rebuilds. Resizing is async, so runs are queued: a change arriving
+// mid-build triggers exactly one more build afterwards, never two at once.
+let building = false;
+let buildAgain = false;
+
+async function runBuild(reason) {
+    if (building) {
+        buildAgain = true;
+        return;
+    }
+    building = true;
     try {
+        await ensureImageVariants(ROOT);
         build();
     } catch (error) {
         console.error(`Build failed (${reason}):`, error.message);
+    } finally {
+        building = false;
+        if (buildAgain) {
+            buildAgain = false;
+            runBuild('queued change');
+        }
     }
 }
 

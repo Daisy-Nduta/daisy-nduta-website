@@ -1,0 +1,272 @@
+{
+  "crop-11.jpg": {
+    "width": 800,
+    "height": 600,
+    "variants": {}
+  },
+  "crop-12.jpg": {
+    "width": 1080,
+    "height": 810,
+    "variants": {
+      "800": "images/uploads/sized/crop-12-800.jpg"
+    }
+  },
+  "crop-13.jpg": {
+    "width": 1440,
+    "height": 1080,
+    "variants": {
+      "800": "images/uploads/sized/crop-13-800.jpg",
+      "1400": "images/uploads/sized/crop-13-1400.jpg"
+    }
+  },
+  "crop-14.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-14-800.jpg",
+      "1400": "images/uploads/sized/crop-14-1400.jpg"
+    }
+  },
+  "crop-15.jpg": {
+    "width": 702,
+    "height": 527,
+    "variants": {}
+  },
+  "crop-16.jpg": {
+    "width": 1905,
+    "height": 1429,
+    "variants": {
+      "800": "images/uploads/sized/crop-16-800.jpg",
+      "1400": "images/uploads/sized/crop-16-1400.jpg"
+    }
+  },
+  "crop-18.jpg": {
+    "width": 640,
+    "height": 480,
+    "variants": {}
+  },
+  "crop-19.jpg": {
+    "width": 1292,
+    "height": 969,
+    "variants": {
+      "800": "images/uploads/sized/crop-19-800.jpg"
+    }
+  },
+  "crop-20.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-20-800.jpg",
+      "1400": "images/uploads/sized/crop-20-1400.jpg"
+    }
+  },
+  "crop-21.jpg": {
+    "width": 1368,
+    "height": 1026,
+    "variants": {
+      "800": "images/uploads/sized/crop-21-800.jpg"
+    }
+  },
+  "crop-22.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-22-800.jpg",
+      "1400": "images/uploads/sized/crop-22-1400.jpg"
+    }
+  },
+  "crop-25.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-25-800.jpg",
+      "1400": "images/uploads/sized/crop-25-1400.jpg"
+    }
+  },
+  "crop-27.jpg": {
+    "width": 1600,
+    "height": 1200,
+    "variants": {
+      "800": "images/uploads/sized/crop-27-800.jpg",
+      "1400": "images/uploads/sized/crop-27-1400.jpg"
+    }
+  },
+  "crop-28.jpg": {
+    "width": 1600,
+    "height": 1200,
+    "variants": {
+      "800": "images/uploads/sized/crop-28-800.jpg",
+      "1400": "images/uploads/sized/crop-28-1400.jpg"
+    }
+  },
+  "crop-29.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-29-800.jpg",
+      "1400": "images/uploads/sized/crop-29-1400.jpg"
+    }
+  },
+  "crop-30.jpg": {
+    "width": 842,
+    "height": 632,
+    "variants": {
+      "800": "images/uploads/sized/crop-30-800.jpg"
+    }
+  },
+  "crop-31.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-31-800.jpg",
+      "1400": "images/uploads/sized/crop-31-1400.jpg"
+    }
+  },
+  "crop-33.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-33-800.jpg",
+      "1400": "images/uploads/sized/crop-33-1400.jpg"
+    }
+  },
+  "crop-34.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-34-800.jpg",
+      "1400": "images/uploads/sized/crop-34-1400.jpg"
+    }
+  },
+  "crop-35.jpg": {
+    "width": 456,
+    "height": 342,
+    "variants": {}
+  },
+  "crop-36.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-36-800.jpg",
+      "1400": "images/uploads/sized/crop-36-1400.jpg"
+    }
+  },
+  "crop-37.jpg": {
+    "width": 878,
+    "height": 659,
+    "variants": {
+      "800": "images/uploads/sized/crop-37-800.jpg"
+    }
+  },
+  "crop-38.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-38-800.jpg",
+      "1400": "images/uploads/sized/crop-38-1400.jpg"
+    }
+  },
+  "crop-39.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-39-800.jpg",
+      "1400": "images/uploads/sized/crop-39-1400.jpg"
+    }
+  },
+  "crop-4.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-4-800.jpg",
+      "1400": "images/uploads/sized/crop-4-1400.jpg"
+    }
+  },
+  "crop-40.jpg": {
+    "width": 700,
+    "height": 525,
+    "variants": {}
+  },
+  "crop-41.jpg": {
+    "width": 1600,
+    "height": 1200,
+    "variants": {
+      "800": "images/uploads/sized/crop-41-800.jpg",
+      "1400": "images/uploads/sized/crop-41-1400.jpg"
+    }
+  },
+  "crop-42.jpg": {
+    "width": 1600,
+    "height": 1200,
+    "variants": {
+      "800": "images/uploads/sized/crop-42-800.jpg",
+      "1400": "images/uploads/sized/crop-42-1400.jpg"
+    }
+  },
+  "crop-5.jpg": {
+    "width": 1150,
+    "height": 863,
+    "variants": {
+      "800": "images/uploads/sized/crop-5-800.jpg"
+    }
+  },
+  "crop-6.jpg": {
+    "width": 1600,
+    "height": 1200,
+    "variants": {
+      "800": "images/uploads/sized/crop-6-800.jpg",
+      "1400": "images/uploads/sized/crop-6-1400.jpg"
+    }
+  },
+  "crop-7.jpg": {
+    "width": 1905,
+    "height": 1429,
+    "variants": {
+      "800": "images/uploads/sized/crop-7-800.jpg",
+      "1400": "images/uploads/sized/crop-7-1400.jpg"
+    }
+  },
+  "crop-8.jpg": {
+    "width": 959,
+    "height": 719,
+    "variants": {
+      "800": "images/uploads/sized/crop-8-800.jpg"
+    }
+  },
+  "crop-9.jpg": {
+    "width": 1069,
+    "height": 802,
+    "variants": {
+      "800": "images/uploads/sized/crop-9-800.jpg"
+    }
+  },
+  "in-the-beginning.jpg": {
+    "width": 750,
+    "height": 671,
+    "variants": {}
+  },
+  "photoroom-20260904-163202-2.jpg": {
+    "width": 2000,
+    "height": 2000,
+    "variants": {
+      "800": "images/uploads/sized/photoroom-20260904-163202-2-800.jpg",
+      "1400": "images/uploads/sized/photoroom-20260904-163202-2-1400.jpg"
+    }
+  },
+  "ti0a9382.jpg": {
+    "width": 1800,
+    "height": 1200,
+    "variants": {
+      "800": "images/uploads/sized/ti0a9382-800.jpg",
+      "1400": "images/uploads/sized/ti0a9382-1400.jpg"
+    }
+  },
+  "touie.jpg": {
+    "width": 1726,
+    "height": 704,
+    "variants": {
+      "800": "images/uploads/sized/touie-800.jpg",
+      "1400": "images/uploads/sized/touie-1400.jpg"
+    }
+  }
+}

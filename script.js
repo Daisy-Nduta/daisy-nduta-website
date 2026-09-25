@@ -352,7 +352,13 @@
         try {
             const list = JSON.parse(raw);
             if (Array.isArray(list) && list.length > 1) {
-                img.src = list[Math.floor(Math.random() * list.length)];
+                // Entries are {src, srcset} (resized copies); plain strings
+                // are the older format, still handled.
+                const pick = list[Math.floor(Math.random() * list.length)];
+                const src = typeof pick === 'string' ? pick : pick.src;
+                const srcset = typeof pick === 'string' ? '' : pick.srcset;
+                if (srcset) img.srcset = srcset; else img.removeAttribute('srcset');
+                img.src = src;
             }
         } catch {
             // Malformed data-images (shouldn't happen, build.mjs controls
