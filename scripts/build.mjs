@@ -157,6 +157,7 @@ function head(title, description) {
   <link rel="stylesheet" href="style.css">
   <style>:root{--accent:${ACCENT_COLOR};}</style>
   <script src="script.js" defer></script>
+  <script data-goatcounter="https://daisynduta.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 `;
 }
