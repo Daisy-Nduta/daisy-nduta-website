@@ -1,8 +1,8 @@
 ---
 title: Frequency Shift
 order: 1
-cardLabel: Project Coordinator
-cardSummary: Community-driven initiative building a multimedia cultural radio platform.
+cardLabel: 2025 - 2026
+cardSummary: Project Coordinator
 link: 'https://eunic.eu/projects/kenya-frequency-shift'
 details:
   - label: Role
