@@ -577,3 +577,58 @@
     render();
     startAutoplay();
 })();
+
+// Project-page image galleries (.image-gallery, only rendered by build.mjs
+// for items with 1+ images): when there are 2+ images, step to the next one
+// every few seconds and loop back to the start after the last. Pauses while
+// the visitor is hovering, focused inside, or touching the gallery (and for
+// a moment after they let go, so a manual swipe isn't immediately undone);
+// skipped entirely under prefers-reduced-motion.
+(() => {
+    const galleries = document.querySelectorAll('.image-gallery');
+    if (!galleries.length) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const GALLERY_AUTOPLAY_MS = 3500;
+    const RESUME_DELAY_MS = 4000;
+
+    galleries.forEach(gallery => {
+        const images = gallery.querySelectorAll('img');
+        if (images.length < 2) return;
+
+        let paused = false;
+        let resumeTimer = null;
+
+        function pause() {
+            paused = true;
+            clearTimeout(resumeTimer);
+        }
+
+        function resumeLater() {
+            clearTimeout(resumeTimer);
+            resumeTimer = setTimeout(() => { paused = false; }, RESUME_DELAY_MS);
+        }
+
+        // Position of each image within the gallery's own scroll coordinates,
+        // measured fresh each step so it stays right across resizes.
+        function offsetOf(img) {
+            return img.getBoundingClientRect().left - gallery.getBoundingClientRect().left + gallery.scrollLeft;
+        }
+
+        function step() {
+            if (paused || document.hidden) return;
+            const atEnd = gallery.scrollLeft + gallery.clientWidth >= gallery.scrollWidth - 2;
+            const nextImg = atEnd ? null : [...images].find(img => offsetOf(img) > gallery.scrollLeft + 2);
+            gallery.scrollTo({ left: nextImg ? offsetOf(nextImg) : 0, behavior: 'smooth' });
+        }
+
+        gallery.addEventListener('mouseenter', pause);
+        gallery.addEventListener('mouseleave', resumeLater);
+        gallery.addEventListener('focusin', pause);
+        gallery.addEventListener('focusout', resumeLater);
+        gallery.addEventListener('touchstart', pause, { passive: true });
+        gallery.addEventListener('touchend', resumeLater, { passive: true });
+
+        setInterval(step, GALLERY_AUTOPLAY_MS);
+    });
+})();
