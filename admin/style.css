@@ -252,3 +252,32 @@ body {
 .crop-stage:active { cursor: grabbing; }
 .crop-stage__img { position: absolute; left: 0; top: 0; max-width: none; pointer-events: none; user-select: none; }
 .crop-zoom { width: 100%; margin: 14px 0 0; }
+
+/* ---- Site Visits (GoatCounter stats) ---- */
+.stats-note { font-size: 13px; color: rgba(32, 30, 31, .55); margin: 12px 0 0; line-height: 1.5; }
+.stats-error { font-size: 13px; color: #b23b3b; margin: 0 0 16px; }
+.stats-steps { font-size: 14px; line-height: 1.6; padding-left: 20px; margin: 10px 0 20px; }
+.stats-steps a { color: #a22106; }
+.linklike { background: none; border: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
+.linklike:hover { color: #a22106; }
+
+.stats-hero { margin-bottom: 28px; }
+.stats-hero__number { font-family: "Anton", Impact, sans-serif; font-size: 64px; line-height: 1; }
+.stats-hero__label { font-size: 13px; color: rgba(32, 30, 31, .55); margin-top: 6px; }
+
+.stats-panel { margin-bottom: 28px; }
+.stats-panel__title { font-family: "Anton", Impact, sans-serif; text-transform: uppercase; font-weight: 400; font-size: 13px; letter-spacing: .04em; margin: 0 0 12px; }
+
+.stats-chart { position: relative; height: 160px; border-bottom: 1px solid rgba(32, 30, 31, .25); }
+.stats-chart__peak { position: absolute; top: 0; left: 0; right: 0; border-top: 1px dashed rgba(32, 30, 31, .15); font-size: 11px; color: rgba(32, 30, 31, .45); padding-top: 2px; pointer-events: none; }
+.stats-chart__bars { position: absolute; inset: 18px 0 0 0; display: flex; align-items: flex-end; gap: 2px; }
+.stats-chart__col { flex: 1; height: 100%; display: flex; align-items: flex-end; cursor: default; }
+.stats-chart__bar { width: 100%; background: #a22106; border-radius: 4px 4px 0 0; }
+.stats-chart__col:hover .stats-chart__bar { opacity: .75; }
+.stats-chart__tip { position: absolute; top: -8px; transform: translate(-50%, -100%); background: #201e1f; color: #fff; font-size: 12px; padding: 5px 9px; border-radius: 5px; white-space: nowrap; pointer-events: none; }
+.stats-chart__axis { display: flex; justify-content: space-between; font-size: 11px; color: rgba(32, 30, 31, .45); margin-top: 6px; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; }
+.stats-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.stats-table td { padding: 8px 0; border-bottom: 1px solid rgba(32, 30, 31, .1); }
+.stats-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; color: rgba(32, 30, 31, .7); padding-left: 12px; }

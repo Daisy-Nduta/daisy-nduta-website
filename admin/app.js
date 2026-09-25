@@ -278,16 +278,19 @@
     const list = document.getElementById('sidebar-list');
     list.innerHTML = collections
       .map(c => `<button class="sidebar__item" data-key="${c.key}">${escapeHtml(c.label)}</button>`)
-      .join('');
+      .join('') +
+      `<div class="sidebar__group-label">Insights</div>
+      <button class="sidebar__item" data-view="analytics">Site Visits</button>`;
     list.addEventListener('click', e => {
       const btn = e.target.closest('[data-key]');
       if (btn) selectCollection(btn.dataset.key);
+      else if (e.target.closest('[data-view="analytics"]')) renderAnalytics();
     });
   }
 
   function setActiveSidebarItem(key) {
     document.querySelectorAll('.sidebar__item').forEach(el => {
-      el.classList.toggle('active', el.dataset.key === key);
+      el.classList.toggle('active', (el.dataset.key || el.dataset.view) === key);
     });
   }
 
@@ -1082,6 +1085,179 @@
       } catch (error) {
         toast(error.message, 'error');
       }
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Site Visits (GoatCounter stats, fetched via /api/analytics/* so the API
+  // key stays on the local server -- see admin-api.mjs)
+  // ---------------------------------------------------------------------
+
+  const ANALYTICS_RANGES = [7, 30, 90];
+  let analyticsDays = 30;
+
+  function formatCount(n) {
+    return Number(n || 0).toLocaleString('en');
+  }
+
+  // Page titles come through as "MPavilion — Daisy Nduta"; the suffix is
+  // the same on every page, so drop it.
+  function pageName(page) {
+    if (page.path === '/' || page.path === '/index.html') return 'Home';
+    const title = String(page.title || '').replace(/\s+—\s+Daisy Nduta$/, '').trim();
+    return title || page.path;
+  }
+
+  async function renderAnalytics() {
+    state.activeKey = 'analytics';
+    state.activeKind = null;
+    setActiveSidebarItem('analytics');
+    const main = document.getElementById('main');
+    main.innerHTML = '<div class="editor" id="editor-slot"><p class="stats-note">Loading…</p></div>';
+    const status = await api('/analytics/status');
+    if (state.activeKey !== 'analytics') return;
+    if (status.connected) renderAnalyticsStats(status, false);
+    else renderAnalyticsConnect(status);
+  }
+
+  function renderAnalyticsConnect(status, message) {
+    const slot = document.getElementById('editor-slot');
+    slot.innerHTML = `
+      <div class="editor__header"><span class="editor__title">Site Visits</span></div>
+      ${message ? `<p class="stats-error">${escapeHtml(message)}</p>` : ''}
+      <div class="field" style="max-width:560px;">
+        <p class="stats-note" style="margin-top:0;">To show visitor numbers here, the Content Manager needs a read-only key from GoatCounter. This is a one-time step:</p>
+        <ol class="stats-steps">
+          <li>Open <a href="${escapeHtml(status.dashboardUrl)}" target="_blank" rel="noopener">your GoatCounter dashboard</a> and log in.</li>
+          <li>Click your username in the top menu, then <strong>API</strong>.</li>
+          <li>Create a new key with only the <strong>Read statistics</strong> permission ticked, and copy it.</li>
+          <li>Paste it below and click Connect.</li>
+        </ol>
+        <label class="field__label" for="f-gc-token">GoatCounter API key</label>
+        <div style="display:flex;gap:10px;">
+          <input type="password" id="f-gc-token" autocomplete="off" spellcheck="false" style="flex:1;">
+          <button class="btn btn--primary" id="gc-connect-btn">Connect</button>
+        </div>
+        <p class="stats-note">The key is saved only on this computer. It is never published to the website or GitHub.</p>
+      </div>`;
+
+    const input = document.getElementById('f-gc-token');
+    const btn = document.getElementById('gc-connect-btn');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = 'Checking…';
+      try {
+        await api('/analytics/token', { method: 'PUT', body: JSON.stringify({ token: input.value }) });
+        toast('Connected to GoatCounter.', 'ok');
+        renderAnalyticsStats(status, false);
+      } catch (error) {
+        toast(error.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Connect';
+      }
+    });
+  }
+
+  async function renderAnalyticsStats(status, refresh) {
+    const slot = document.getElementById('editor-slot');
+    const rangeButtons = ANALYTICS_RANGES
+      .map(d => `<button class="btn btn--small${d === analyticsDays ? ' btn--primary' : ''}" data-days="${d}">${d} days</button>`)
+      .join('');
+    slot.innerHTML = `
+      <div class="editor__header">
+        <span class="editor__title">Site Visits</span>
+        <div class="editor__actions">
+          ${rangeButtons}
+          <button class="btn btn--small" id="gc-refresh-btn">Refresh</button>
+          <a class="btn btn--small" href="${escapeHtml(status.dashboardUrl)}" target="_blank" rel="noopener">Full dashboard ↗</a>
+        </div>
+      </div>
+      <div id="stats-body"><p class="stats-note">Loading…</p></div>`;
+
+    slot.querySelectorAll('[data-days]').forEach(b => b.addEventListener('click', () => {
+      analyticsDays = Number(b.dataset.days);
+      renderAnalyticsStats(status, false);
+    }));
+    document.getElementById('gc-refresh-btn').addEventListener('click', () => renderAnalyticsStats(status, true));
+
+    const requestedDays = analyticsDays;
+    let data;
+    try {
+      data = await api(`/analytics/summary?days=${requestedDays}${refresh ? '&refresh=1' : ''}`);
+    } catch (error) {
+      if (state.activeKey !== 'analytics' || requestedDays !== analyticsDays) return;
+      if (/didn’t accept the API key/.test(error.message)) {
+        renderAnalyticsConnect(status, error.message);
+        return;
+      }
+      document.getElementById('stats-body').innerHTML = `<p class="stats-error">${escapeHtml(error.message)}</p>`;
+      return;
+    }
+    // Ignore a slow response for a range the person has since switched away from.
+    if (state.activeKey !== 'analytics' || requestedDays !== analyticsDays) return;
+
+    const body = document.getElementById('stats-body');
+    const peak = Math.max(1, ...data.daily.map(d => d.count));
+    const bars = data.daily.map(d => {
+      const pct = (d.count / peak) * 100;
+      const label = `${new Date(`${d.day}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })}: ${formatCount(d.count)} ${d.count === 1 ? 'visit' : 'visits'}`;
+      return `<div class="stats-chart__col" data-label="${escapeHtml(label)}"><div class="stats-chart__bar" style="height:${d.count ? Math.max(pct, 2) : 0}%"></div></div>`;
+    }).join('');
+    const first = data.daily[0];
+    const last = data.daily[data.daily.length - 1];
+    const fmtDay = d => new Date(`${d.day}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+    const table = (title, rows, nameOf) => `
+      <section class="stats-panel">
+        <h3 class="stats-panel__title">${title}</h3>
+        ${rows.length ? `<table class="stats-table">
+          ${rows.map(r => `<tr><td>${escapeHtml(nameOf(r))}</td><td>${formatCount(r.count)}</td></tr>`).join('')}
+        </table>` : '<p class="stats-note">Nothing yet for this period.</p>'}
+      </section>`;
+
+    body.innerHTML = `
+      <div class="stats-hero">
+        <div class="stats-hero__number">${formatCount(data.total)}</div>
+        <div class="stats-hero__label">${data.total === 1 ? 'visit' : 'visits'} in the last ${data.days} days</div>
+      </div>
+      ${data.daily.length ? `
+      <section class="stats-panel">
+        <h3 class="stats-panel__title">Visits per day</h3>
+        <div class="stats-chart" role="img" aria-label="Visits per day over the last ${data.days} days, peaking at ${formatCount(peak)}">
+          <div class="stats-chart__peak">${formatCount(peak)}</div>
+          <div class="stats-chart__bars">${bars}</div>
+          <div class="stats-chart__tip" hidden></div>
+        </div>
+        <div class="stats-chart__axis"><span>${fmtDay(first)}</span><span>${fmtDay(last)}</span></div>
+      </section>` : ''}
+      <div class="stats-grid">
+        ${table('Most viewed pages', data.pages, pageName)}
+        ${table('Where visitors came from', data.referrers, r => r.name)}
+        ${table('Countries', data.locations, r => r.name)}
+      </div>
+      <p class="stats-note">Counts are unique visits, from GoatCounter. Visits from this computer while previewing in the Content Manager aren’t counted. Updated ${new Date(data.fetchedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.</p>
+      <p class="stats-note"><button class="linklike" id="gc-disconnect-btn">Disconnect GoatCounter</button></p>`;
+
+    const chart = body.querySelector('.stats-chart');
+    if (chart) {
+      const tip = chart.querySelector('.stats-chart__tip');
+      chart.addEventListener('mousemove', e => {
+        const col = e.target.closest('.stats-chart__col');
+        if (!col) { tip.hidden = true; return; }
+        tip.textContent = col.dataset.label;
+        tip.hidden = false;
+        const box = chart.getBoundingClientRect();
+        const colBox = col.getBoundingClientRect();
+        const x = colBox.left - box.left + colBox.width / 2;
+        tip.style.left = `${Math.min(Math.max(x, 70), box.width - 70)}px`;
+      });
+      chart.addEventListener('mouseleave', () => { tip.hidden = true; });
+    }
+
+    document.getElementById('gc-disconnect-btn').addEventListener('click', async () => {
+      await api('/analytics/token', { method: 'DELETE' });
+      toast('Disconnected from GoatCounter.', 'ok');
+      renderAnalyticsConnect(status);
     });
   }
 

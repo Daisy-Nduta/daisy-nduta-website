@@ -44,6 +44,11 @@ export const FILE_COLLECTIONS = [
 // from breaking the highlight color across the whole site.
 export const DEFAULT_ACCENT_COLOR = '#a22106';
 
+// GoatCounter site (visitor analytics). build.mjs puts its counting script
+// on every public page; admin-api.mjs reads stats back from its API for the
+// CMS's "Site Visits" page.
+export const GOATCOUNTER_SITE = 'https://daisynduta.goatcounter.com';
+
 export function isFolderCollection(key) {
     return FOLDER_COLLECTIONS.some(c => c.key === key);
 }

@@ -12,7 +12,7 @@ import express from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
 import matter from 'gray-matter';
-import { FOLDER_COLLECTIONS, FILE_COLLECTIONS, CROSS_LINK_COLLECTIONS, RESERVED_PAGE_SLUGS, isFolderCollection, isFileCollection } from './schema.mjs';
+import { FOLDER_COLLECTIONS, FILE_COLLECTIONS, CROSS_LINK_COLLECTIONS, RESERVED_PAGE_SLUGS, GOATCOUNTER_SITE, isFolderCollection, isFileCollection } from './schema.mjs';
 
 // Uploaded photos get resized/re-encoded before they ever touch disk --
 // portfolio photos routinely come out of a phone/camera at several MB and
@@ -274,6 +274,122 @@ export function createAdminApi(ROOT) {
                 });
             });
         });
+    });
+
+    // ---- analytics (GoatCounter) ----
+    //
+    // The CMS's "Site Visits" page reads stats from GoatCounter's API through
+    // these routes, so the API token never reaches the browser. The token is
+    // a read-only GoatCounter API key, kept in .deploy/goatcounter-token --
+    // gitignored like the deploy key next to it, so it travels with a copied
+    // project folder but is never committed or published. The static file
+    // server doesn't serve dotfile folders, so it isn't reachable over HTTP.
+
+    const TOKEN_FILE = path.join(ROOT, '.deploy', 'goatcounter-token');
+    const ANALYTICS_RANGES = [7, 30, 90];
+    const ANALYTICS_CACHE_MS = 5 * 60 * 1000;
+    const analyticsCache = new Map();
+
+    function readToken() {
+        if (process.env.GOATCOUNTER_TOKEN) return process.env.GOATCOUNTER_TOKEN.trim();
+        try {
+            return fs.readFileSync(TOKEN_FILE, 'utf8').trim() || null;
+        } catch {
+            return null;
+        }
+    }
+
+    async function goatcounter(endpoint, params, token) {
+        const url = new URL(`${GOATCOUNTER_SITE}/api/v0${endpoint}`);
+        Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, String(v)));
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+        if (res.status === 401 || res.status === 403) {
+            const error = new Error('GoatCounter didn’t accept the API key. Check it has the “Read statistics” permission, or paste a new one.');
+            error.status = 401;
+            throw error;
+        }
+        if (res.status === 429) {
+            const error = new Error('GoatCounter is rate-limiting requests — wait a few seconds and try again.');
+            error.status = 429;
+            throw error;
+        }
+        if (!res.ok) {
+            const error = new Error(`GoatCounter returned an error (${res.status}).`);
+            error.status = 502;
+            throw error;
+        }
+        return res.json();
+    }
+
+    // Start of the window, rounded to the hour as the API asks for.
+    function rangeParams(days) {
+        const end = new Date();
+        end.setUTCMinutes(0, 0, 0);
+        end.setUTCHours(end.getUTCHours() + 1);
+        const start = new Date(end);
+        start.setUTCDate(start.getUTCDate() - days);
+        return { start: start.toISOString().replace('.000', ''), end: end.toISOString().replace('.000', '') };
+    }
+
+    router.get('/analytics/status', (req, res) => {
+        res.json({ connected: Boolean(readToken()), dashboardUrl: GOATCOUNTER_SITE });
+    });
+
+    router.put('/analytics/token', async (req, res) => {
+        const token = String((req.body && req.body.token) || '').trim();
+        if (!token) return res.status(400).json({ error: 'Paste the API key first.' });
+        try {
+            // Check the key actually works before saving it.
+            await goatcounter('/stats/total', rangeParams(1), token);
+        } catch (error) {
+            return res.status(error.status === 401 ? 400 : 502).json({ error: error.message });
+        }
+        fs.mkdirSync(path.dirname(TOKEN_FILE), { recursive: true });
+        fs.writeFileSync(TOKEN_FILE, `${token}\n`, { mode: 0o600 });
+        analyticsCache.clear();
+        res.json({ ok: true });
+    });
+
+    router.delete('/analytics/token', (req, res) => {
+        fs.rmSync(TOKEN_FILE, { force: true });
+        analyticsCache.clear();
+        res.json({ ok: true });
+    });
+
+    router.get('/analytics/summary', async (req, res) => {
+        const token = readToken();
+        if (!token) return res.status(400).json({ error: 'not-connected' });
+        const days = ANALYTICS_RANGES.includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+
+        const cached = analyticsCache.get(days);
+        if (cached && Date.now() - cached.at < ANALYTICS_CACHE_MS && req.query.refresh !== '1') {
+            return res.json(cached.data);
+        }
+
+        const range = rangeParams(days);
+        try {
+            // Four requests at once -- exactly GoatCounter's 4-per-second
+            // rate limit, which is why results are cached for a few minutes.
+            const [total, hits, refs, locations] = await Promise.all([
+                goatcounter('/stats/total', range, token),
+                goatcounter('/stats/hits', { ...range, limit: 10 }, token),
+                goatcounter('/stats/toprefs', { ...range, limit: 8 }, token),
+                goatcounter('/stats/locations', { ...range, limit: 8 }, token)
+            ]);
+            const data = {
+                days,
+                total: total.total || 0,
+                daily: (total.stats || []).map(s => ({ day: s.day, count: s.daily || 0 })),
+                pages: (hits.hits || []).filter(h => !h.event).map(h => ({ path: h.path, title: h.title || '', count: h.count || 0 })),
+                referrers: (refs.stats || []).map(r => ({ name: r.name || '(direct / unknown)', count: r.count || 0 })),
+                locations: (locations.stats || []).map(l => ({ name: l.name || '(unknown)', count: l.count || 0 })),
+                fetchedAt: new Date().toISOString()
+            };
+            analyticsCache.set(days, { at: Date.now(), data });
+            res.json(data);
+        } catch (error) {
+            res.status(error.status === 401 ? 401 : 502).json({ error: error.message });
+        }
     });
 
     return router;

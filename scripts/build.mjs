@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
-import { RESERVED_PAGE_SLUGS, DEFAULT_ACCENT_COLOR } from './schema.mjs';
+import { RESERVED_PAGE_SLUGS, DEFAULT_ACCENT_COLOR, GOATCOUNTER_SITE } from './schema.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
@@ -157,7 +157,7 @@ function head(title, description) {
   <link rel="stylesheet" href="style.css">
   <style>:root{--accent:${ACCENT_COLOR};}</style>
   <script src="script.js" defer></script>
-  <script data-goatcounter="https://daisynduta.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+  <script data-goatcounter="${GOATCOUNTER_SITE}/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 `;
 }
