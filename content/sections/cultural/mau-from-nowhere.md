@@ -14,6 +14,7 @@ details:
 images:
   - images/uploads/crop-31.jpg
   - images/uploads/crop-33.jpg
+  - images/uploads/crop-49.jpg
 alsoShowOn: ''
 crossListedLabel: ''
 crossListedHref: ''
