@@ -1,6 +1,6 @@
 ---
 title: Live Music Safari - Melbourne Music Week
-order: 2
+order: 4
 cardLabel: Curator & Producer
 cardSummary: 'Artists: Kee'' ahn, Soli, Daniel Elia, Soju Gang, Philly, Gradi'
 link: ''

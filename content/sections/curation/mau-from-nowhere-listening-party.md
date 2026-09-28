@@ -1,9 +1,10 @@
 ---
 title: 'Pressure Live Listening Party - mau from nowhere, hihi'
-order: 5
-cardLabel: Event Producer
+order: 3
+cardLabel: Event Producer 2025
 cardSummary: 'Artist: mau from nowhere, hihi'
 link: ''
+embeds: []
 details:
   - label: Role
     value: Co-producer

@@ -1,6 +1,6 @@
 ---
 title: Let it Pass music video
-order: 6
+order: 2
 cardLabel: Producer
 cardSummary: 'Artist: mau from nowhere, Maya Amolo'
 link: 'https://youtu.be/BTraykdWwhI?si=TekogbbWPCAyiqFs'

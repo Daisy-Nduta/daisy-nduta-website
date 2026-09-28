@@ -1,7 +1,7 @@
 ---
 title: 'naniwho '
 order: 1
-cardLabel: ''
+cardLabel: Current
 cardSummary: >-
   naniwho is a genre-fluid DJ, bringing together soulful sounds, diasporic
   rhythms and unexpected global influences in dynamic, immersive sets.
