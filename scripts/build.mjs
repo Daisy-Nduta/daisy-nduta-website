@@ -18,12 +18,13 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
 
 // Recomputed at the top of build() once client-added pages (content/sections/pages/)
-// are known, so it includes them between Art & Culture Projects and About. header()
+// are known, so it includes them between Work and About. header()
 // reads this module-level binding, so it must be set before any page is generated.
 let NAV_ITEMS = [
     ['sound.html', 'Sound'],
     ['curation-production.html', 'Production & Curation'],
-    ['cultural-projects.html', 'Art & Culture Projects'],
+    ['cultural-projects.html', 'Cultural Projects'],
+    ['work.html', 'Work'],
     ['about.html', 'About'],
     ['contact.html', 'Contact']
 ];
@@ -68,8 +69,108 @@ const TOP_SECTIONS = {
     live: { page: 'sound.html', breadcrumb: 'Sound → Live', backHref: 'sound.html#live', backLabel: 'Sound → Live', bg: 'sound' },
     studio: { page: 'sound.html', breadcrumb: 'Sound → Studio', backHref: 'sound.html#studio', backLabel: 'Sound → Studio', bg: 'sound' },
     curation: { page: 'curation-production.html', breadcrumb: 'Production & Curation', backHref: 'curation-production.html', backLabel: 'Production & Curation', bg: 'curation' },
-    cultural: { page: 'cultural-projects.html', breadcrumb: 'Art & Culture Projects', backHref: 'cultural-projects.html', backLabel: 'Art & Culture Projects', bg: 'cultural' }
+    cultural: { page: 'cultural-projects.html', breadcrumb: 'Cultural Projects', backHref: 'cultural-projects.html', backLabel: 'Cultural Projects', bg: 'cultural' },
+    // Daisy's own work as an artist. No animation of its own yet, so it
+    // uses the default water-surface background (see script.js).
+    work: { page: 'work.html', breadcrumb: 'Work', backHref: 'work.html', backLabel: 'Work', bg: 'puddles' }
 };
+
+// Optional one-line subtitles under section headings, edited from the CMS
+// (Section Subtitles -> content/pages/subtitles.json). Each one has its own
+// "show" switch, so a subtitle can be drafted without appearing on the site.
+// Holds only the ones switched on; read fresh at the top of build().
+let SUBTITLES = {};
+
+function subtitle(key, indent = '    ') {
+    const text = SUBTITLES[key];
+    return text ? `\n${indent}<p class="section-subtitle">${escapeHtml(text)}</p>` : '';
+}
+
+// Embedded players for the media hosts that allow it. Returns the player's
+// address and shape for a pasted link, or null for anything else (which the
+// build then skips). YouTube uses its no-cookie domain so visitors aren't
+// tracked just for loading the page.
+function embedFor(rawUrl) {
+    let url;
+    try {
+        url = new URL(String(rawUrl ?? '').trim());
+    } catch {
+        return null;
+    }
+    const host = url.hostname.replace(/^(www|m|music)\./, '');
+    const parts = url.pathname.split('/').filter(Boolean);
+
+    if (host === 'youtube.com' || host === 'youtu.be' || host === 'youtube-nocookie.com') {
+        let id = '';
+        if (host === 'youtu.be') id = parts[0];
+        else if (url.searchParams.get('v')) id = url.searchParams.get('v');
+        else if (['shorts', 'embed', 'live'].includes(parts[0])) id = parts[1];
+        const list = url.searchParams.get('list');
+        if (id && /^[\w-]+$/.test(id)) {
+            const start = youtubeStart(url.searchParams.get('t') || url.searchParams.get('start'));
+            return { kind: 'video', label: 'YouTube video', src: `https://www.youtube-nocookie.com/embed/${id}${start ? `?start=${start}` : ''}` };
+        }
+        if (list && /^[\w-]+$/.test(list)) {
+            return { kind: 'video', label: 'YouTube playlist', src: `https://www.youtube-nocookie.com/embed/videoseries?list=${list}` };
+        }
+        return null;
+    }
+
+    if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+        const nums = parts.filter(p => /^\d+$/.test(p));
+        if (!nums.length) return null;
+        const id = nums[0];
+        // Unlisted videos carry a private hash, either after the id or as ?h=
+        const after = parts[parts.indexOf(id) + 1];
+        const hash = url.searchParams.get('h') || (after && /^[0-9a-f]+$/i.test(after) ? after : '');
+        return { kind: 'video', label: 'Vimeo video', src: `https://player.vimeo.com/video/${id}${hash ? `?h=${hash}` : ''}` };
+    }
+
+    if (host === 'soundcloud.com') {
+        if (parts.length < 2) return null;
+        const clean = `https://soundcloud.com/${parts.join('/')}`;
+        const isSet = parts[1] === 'sets';
+        const color = ACCENT_COLOR.replace('#', '%23');
+        return {
+            kind: isSet ? 'audio-tall' : 'audio',
+            label: 'SoundCloud player',
+            src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(clean)}&color=${color}&auto_play=false&hide_related=true&show_comments=false&show_reposts=false&visual=false`
+        };
+    }
+
+    if (host === 'open.spotify.com') {
+        const typed = parts.filter(p => !/^intl-/.test(p));
+        const [type, id] = typed[0] === 'embed' ? typed.slice(1) : typed;
+        if (!['track', 'album', 'playlist', 'episode', 'show', 'artist'].includes(type) || !/^\w+$/.test(id || '')) return null;
+        return { kind: type === 'track' || type === 'episode' ? 'spotify' : 'spotify-tall', label: 'Spotify player', src: `https://open.spotify.com/embed/${type}/${id}` };
+    }
+
+    return null;
+}
+
+// YouTube start times come as plain seconds ("90") or "1m30s".
+function youtubeStart(value) {
+    if (!value) return 0;
+    if (/^\d+s?$/.test(value)) return parseInt(value, 10);
+    const match = value.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+    if (!match) return 0;
+    return (Number(match[1]) || 0) * 3600 + (Number(match[2]) || 0) * 60 + (Number(match[3]) || 0);
+}
+
+function mediaEmbeds(urls, title) {
+    const players = (urls || [])
+        .map(url => {
+            const embed = embedFor(url);
+            if (!embed && String(url ?? '').trim()) console.warn(`Skipping embed for "${title}" -- not a supported link: ${url}`);
+            return embed;
+        })
+        .filter(Boolean)
+        .map(
+            ({ kind, label, src }) =>
+                `      <div class="media-embed media-embed--${kind}"><iframe src="${escapeHtml(src)}" title="${escapeHtml(`${title} — ${label}`)}" loading="lazy" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
+        );
+    return players.length ? `\n    <div class="media-embeds">\n${players.join('\n')}\n    </div>` : '';
+}
 
 const SOUND_SUBSECTIONS = [
     ['film', 'Film'],
@@ -353,7 +454,7 @@ function itemPage(item) {
     ${figure}
     <div class="project-copy">
 ${projectParagraphs(item.copy)}
-    </div>${linkHtml}
+    </div>${mediaEmbeds(item.embeds, item.title)}${linkHtml}
 ${detailList(item.details)}${crossHtml}
     <nav class="project-navigation" aria-label="Project navigation">
         ${navLinks.join('\n        ')}
@@ -498,6 +599,14 @@ function build() {
     }
     ACCENT_COLOR = /^#[0-9a-fA-F]{6}$/.test(settings.accentColor || '') ? settings.accentColor : DEFAULT_ACCENT_COLOR;
 
+    let subtitleEntries = [];
+    try {
+        subtitleEntries = readJson('pages/subtitles.json').sections || [];
+    } catch {
+        subtitleEntries = [];
+    }
+    SUBTITLES = Object.fromEntries(subtitleEntries.filter(s => s.show && String(s.text || '').trim()).map(s => [s.key, s.text.trim()]));
+
     IMAGE_MANIFEST = readImageManifest(ROOT);
     HOME_CARDS = readJson('pages/home.json').cards || [];
     DEFAULT_SHARE_IMAGE = HOME_CARDS.map(c => homeCardImage(c.key)).find(Boolean) || '';
@@ -519,7 +628,8 @@ function build() {
     NAV_ITEMS = [
         ['sound.html', 'Sound'],
         ['curation-production.html', 'Production & Curation'],
-        ['cultural-projects.html', 'Art & Culture Projects'],
+        ['cultural-projects.html', 'Cultural Projects'],
+        ['work.html', 'Work'],
         ...customPages.map(p => [`${p.slug}.html`, p.title]),
         ['about.html', 'About'],
         ['contact.html', 'Contact']
@@ -558,7 +668,7 @@ function build() {
         const { cards, note } = gatherCards(allFoldersData, key);
         return `
     <section class="section" id="${key}">
-      <h2>${accentFull(heading)}</h2>
+      <h2>${accentFull(heading)}</h2>${subtitle(key, '      ')}
       <div class="item-grid">
 ${cards.map(itemCard).join('\n')}
       </div>${note}
@@ -573,7 +683,7 @@ ${cards.map(itemCard).join('\n')}
   ${header('sound.html')}
   <main class="page">
     <p class="eyebrow">Sound</p>
-    <h1 class="hero-lede"><span class="accent">Sound design</span>, location recording, and audio engineering across film, broadcast, live, and studio work.</h1>
+    <h1 class="hero-lede"><span class="accent">Sound design</span>, location recording, and audio engineering across film, broadcast, live, and studio work.</h1>${subtitle('sound')}
 ${soundSections}
     ${FOOTER}
   </main>
@@ -591,7 +701,7 @@ ${soundSections}
   ${header('curation-production.html')}
   <main class="page">
     <p class="eyebrow">Production &amp; Curation</p>
-    <h1 class="hero-lede">Producing, programming, and curating <span class="accent">live experiences</span> — from venue seasons to festival showcases.</h1>
+    <h1 class="hero-lede">Producing, programming, and curating <span class="accent">live experiences</span> — from venue seasons to festival showcases.</h1>${subtitle('curation')}
     <section class="section" aria-label="Production and curation credits">
       <div class="item-grid">
 ${curationCards.map(itemCard).join('\n')}
@@ -608,16 +718,43 @@ ${curationCards.map(itemCard).join('\n')}
     const { cards: culturalCards } = gatherCards(allFoldersData, 'cultural');
     write(
         'cultural-projects.html',
-        head('Art & Culture Projects — Daisy Nduta', 'Longer-term, multidisciplinary, and community-rooted work by Daisy Nduta.', 'cultural-projects.html', homeCardImage('cultural')) +
+        head('Cultural Projects — Daisy Nduta', 'Longer-term, multidisciplinary, and community-rooted work by Daisy Nduta.', 'cultural-projects.html', homeCardImage('cultural')) +
             `<body data-bg="cultural">
   ${header('cultural-projects.html')}
   <main class="page">
-    <p class="eyebrow">Art &amp; Culture Projects</p>
-    <h1 class="hero-lede">Longer-term, multidisciplinary, and <span class="accent">community-rooted</span> work.</h1>
-    <section class="section" aria-label="Art and culture project credits">
+    <p class="eyebrow">Cultural Projects</p>
+    <h1 class="hero-lede">Longer-term, multidisciplinary, and <span class="accent">community-rooted</span> work.</h1>${subtitle('cultural')}
+    <section class="section" aria-label="Cultural project credits">
       <div class="item-grid">
 ${culturalCards.map(itemCard).join('\n')}
       </div>
+    </section>
+    ${FOOTER}
+  </main>
+</body>
+</html>
+`
+    );
+
+    // ---- work.html ----
+    // Daisy's own work as an artist, kept apart from the projects she
+    // produces for or with others.
+    const { cards: workCards } = gatherCards(allFoldersData, 'work');
+    const workGrid = workCards.length
+        ? `      <div class="item-grid">
+${workCards.map(itemCard).join('\n')}
+      </div>`
+        : '      <p class="copy">Work coming soon.</p>';
+    write(
+        'work.html',
+        head('Work — Daisy Nduta', 'Daisy Nduta’s own work as an artist.', 'work.html', homeCardImage('work')) +
+            `<body data-bg="puddles">
+  ${header('work.html')}
+  <main class="page">
+    <p class="eyebrow">Work</p>
+    <h1>Daisy the <span class="accent">Artist</span></h1>${subtitle('work')}
+    <section class="section" aria-label="Work by Daisy Nduta">
+${workGrid}
     </section>
     ${FOOTER}
   </main>
@@ -691,7 +828,7 @@ ${entryDots}
     // 'sound-first' accent has no home anymore and was dropped.
     const ABOUT_PARAGRAPH_ACCENTS = [
         ['cultural producer'],
-        ['Sound', 'Film', 'Production & Curation', 'Art & Culture Projects'],
+        ['Sound', 'Film', 'Production & Curation', 'Cultural Projects'],
         []
     ];
     const paragraphs = about.paragraphs
@@ -799,7 +936,7 @@ ${contactRows}
     // Every public page, so search engines can find each project directly.
     // admin/ and publish.html are the local Content Manager's own pages --
     // useless on the live site, so crawlers are asked to skip them.
-    const sitemapPages = ['', 'sound.html', 'curation-production.html', 'cultural-projects.html', 'about.html', 'contact.html', ...allSlugs.map(slug => `${slug}.html`)];
+    const sitemapPages = ['', 'sound.html', 'curation-production.html', 'cultural-projects.html', 'work.html', 'about.html', 'contact.html', ...allSlugs.map(slug => `${slug}.html`)];
     write(
         'sitemap.xml',
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -818,7 +955,7 @@ Sitemap: ${SITE_URL}/sitemap.xml
 `
     );
 
-    console.log(`Built ${itemCount} item pages + ${customPages.length} custom page(s) + 6 core pages.`);
+    console.log(`Built ${itemCount} item pages + ${customPages.length} custom page(s) + 7 core pages.`);
 }
 
 export { build };

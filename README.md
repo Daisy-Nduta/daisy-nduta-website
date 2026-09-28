@@ -1,6 +1,6 @@
 # Daisy Nduta — Portfolio Site
 
-The personal portfolio site for **Daisy Nduta**, a Nairobi-based sound designer, location recordist, and cultural producer, working across Sound (Film, Broadcast, Live, Studio), Production & Curation, and Art & Culture Projects.
+The personal portfolio site for **Daisy Nduta**, a Nairobi-based sound designer, location recordist, and cultural producer, working across Sound (Film, Broadcast, Live, Studio), Production & Curation, Cultural Projects, and Work (her own work as an artist).
 
 The public site is plain static HTML/CSS/JS, hosted on **GitHub Pages** with a custom domain. Content (project credits, bios, images) is managed through a **local content management system** so Daisy can add, edit, or remove projects and photos herself, without touching code.
 

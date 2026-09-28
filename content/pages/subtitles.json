@@ -1,0 +1,12 @@
+{
+  "sections": [
+    { "key": "sound", "heading": "Sound (page)", "text": "", "show": false },
+    { "key": "film", "heading": "Sound → Film", "text": "", "show": false },
+    { "key": "broadcast", "heading": "Sound → Broadcast", "text": "", "show": false },
+    { "key": "live", "heading": "Sound → Live", "text": "Live sound engineering and recording for artists, showcases, and performances.", "show": true },
+    { "key": "studio", "heading": "Sound → Studio", "text": "", "show": false },
+    { "key": "curation", "heading": "Production & Curation (page)", "text": "", "show": false },
+    { "key": "cultural", "heading": "Cultural Projects (page)", "text": "", "show": false },
+    { "key": "work", "heading": "Work — Daisy the Artist (page)", "text": "", "show": false }
+  ]
+}

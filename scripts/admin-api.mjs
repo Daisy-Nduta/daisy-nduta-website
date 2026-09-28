@@ -131,6 +131,7 @@ export function createAdminApi(ROOT) {
             cardLabel: fields.cardLabel || '',
             cardSummary: fields.cardSummary || '',
             link: fields.link || '',
+            embeds: Array.isArray(fields.embeds) ? fields.embeds : [],
             details: fields.details || [],
             images: Array.isArray(fields.images) ? fields.images : [],
             ...(CROSS_LINK_COLLECTIONS.includes(key)
@@ -165,6 +166,35 @@ export function createAdminApi(ROOT) {
 
         writeEntry(key, slug, req.body || {});
         res.json({ ok: true });
+    });
+
+    // Moves a credit/project to another section (e.g. Cultural Projects ->
+    // Work), photos and all. The file keeps its name, so the project's page
+    // address doesn't change. Only between the credit/project sections --
+    // client Pages have a different shape.
+    router.post('/collections/:key/entries/:slug/move', (req, res) => {
+        const { key, slug } = req.params;
+        const to = (req.body || {}).to;
+        const isItem = k => FOLDER_COLLECTIONS.some(c => c.key === k && c.shape === 'item');
+        if (!isItem(key) || !isItem(to)) return res.status(400).json({ error: 'Entries can only be moved between project sections.' });
+        if (to === key) return res.json({ slug });
+        const entry = readEntry(key, slug);
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+        if (fs.existsSync(path.join(folderPath(to), `${slug}.md`))) {
+            return res.status(409).json({ error: 'That section already has an entry with this name -- rename one of them first.' });
+        }
+
+        // An "also show under" pointing at its new home would list it twice there.
+        if (entry.alsoShowOn === to) entry.alsoShowOn = '';
+        // The cross-listing fields are only editable in some sections; don't
+        // carry them somewhere they'd keep rendering but couldn't be changed.
+        if (!CROSS_LINK_COLLECTIONS.includes(to)) {
+            ['alsoShowOn', 'crossListedLabel', 'crossListedHref', 'crossListedText'].forEach(field => delete entry[field]);
+        }
+
+        writeEntry(to, slug, entry);
+        fs.unlinkSync(path.join(folderPath(key), `${slug}.md`));
+        res.json({ slug });
     });
 
     router.delete('/collections/:key/entries/:slug', (req, res) => {

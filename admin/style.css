@@ -151,7 +151,7 @@ body {
 
 .field { margin-bottom: 22px; max-width: 640px; }
 .field__label { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: rgba(32, 30, 31, .55); margin-bottom: 7px; }
-.field input[type="text"], .field input[type="number"], .field textarea {
+.field input[type="text"], .field input[type="number"], .field textarea, .field select {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid rgba(32, 30, 31, .2);
@@ -161,7 +161,13 @@ body {
     color: #201e1f;
     background: #fff;
 }
-.field input:focus, .field textarea:focus { outline: none; border-color: #a22106; }
+.field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: #a22106; }
+
+.subtitle-row { border: 1px solid rgba(32, 30, 31, .12); border-radius: 8px; padding: 16px 18px; }
+.subtitle-row__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.subtitle-row__name { font-family: "Anton", Impact, sans-serif; text-transform: uppercase; font-size: 14px; letter-spacing: .02em; }
+.subtitle-row__show { display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(32, 30, 31, .7); cursor: pointer; white-space: nowrap; }
+.subtitle-row__show input { accent-color: #a22106; }
 .field textarea { min-height: 76px; resize: vertical; }
 
 .detail-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }

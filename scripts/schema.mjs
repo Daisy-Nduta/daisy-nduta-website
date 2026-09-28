@@ -16,7 +16,8 @@ export const FOLDER_COLLECTIONS = [
     { key: 'live', label: 'Sound → Live', shape: 'item' },
     { key: 'studio', label: 'Sound → Studio', shape: 'item' },
     { key: 'curation', label: 'Production & Curation', shape: 'item' },
-    { key: 'cultural', label: 'Art & Culture Projects', shape: 'item' },
+    { key: 'cultural', label: 'Cultural Projects', shape: 'item' },
+    { key: 'work', label: 'Work (Daisy the Artist)', shape: 'item' },
     { key: 'pages', label: 'Pages', shape: 'page' }
 ];
 
@@ -30,12 +31,13 @@ export const CROSS_LINK_COLLECTIONS = ['cultural'];
 
 // New pages can't take these slugs -- they're the core site's own generated
 // filenames, and a same-named page would silently overwrite one of them.
-export const RESERVED_PAGE_SLUGS = new Set(['index', 'sound', 'curation-production', 'cultural-projects', 'about', 'contact']);
+export const RESERVED_PAGE_SLUGS = new Set(['index', 'sound', 'curation-production', 'cultural-projects', 'work', 'about', 'contact']);
 
 export const FILE_COLLECTIONS = [
     { key: 'home', label: 'Home Page', file: 'content/pages/home.json' },
     { key: 'about', label: 'About Page', file: 'content/pages/about.json' },
     { key: 'contact', label: 'Contact Page', file: 'content/pages/contact.json' },
+    { key: 'subtitles', label: 'Section Subtitles', file: 'content/pages/subtitles.json' },
     { key: 'settings', label: 'Site Settings', file: 'content/pages/settings.json' }
 ];
 

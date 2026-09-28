@@ -428,7 +428,8 @@
 
     const slot = document.getElementById('editor-slot');
     const isNew = !entry;
-    const data = entry || { title: '', order: 99, cardLabel: '', cardSummary: '', details: [], images: [], body: '', link: '', alsoShowOn: '', crossListedLabel: '', crossListedHref: '', crossListedText: '' };
+    const data = entry || { title: '', order: 99, cardLabel: '', cardSummary: '', details: [], images: [], embeds: [], body: '', link: '', alsoShowOn: '', crossListedLabel: '', crossListedHref: '', crossListedText: '' };
+    const itemSections = state.collections.filter(c => c.kind === 'folder' && c.shape === 'item');
 
     slot.className = 'editor';
     slot.innerHTML = `
@@ -466,6 +467,13 @@
       </div>
 
       <div class="field">
+        <label class="field__label">Embedded media (optional — plays right on the project page)</label>
+        <p style="font-size:13px;color:rgba(32,30,31,.6);margin-bottom:8px;">Paste the normal link to a YouTube or Vimeo video, a SoundCloud track or playlist, or a Spotify track, album, playlist or episode. Add as many as you like.</p>
+        <div id="embeds-rows">${embedRowsHtml(data.embeds)}</div>
+        <button type="button" class="btn btn--small" id="add-embed-btn">+ Add media</button>
+      </div>
+
+      <div class="field">
         <label class="field__label">Details (role/year/credit facts shown on the project page)</label>
         <div id="details-rows">${detailsRowsHtml(data.details)}</div>
         <button type="button" class="btn btn--small" id="add-detail-btn">+ Add detail</button>
@@ -493,7 +501,32 @@
       </div>`
           : ''
       }
+
+      ${
+        isNew
+          ? ''
+          : `
+      <div class="field">
+        <label class="field__label">Section (move this entry, with its photos, to another part of the site)</label>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <select id="f-section" style="max-width:320px;">
+            ${itemSections.map(c => `<option value="${escapeHtml(c.key)}"${c.key === key ? ' selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
+          </select>
+          <button type="button" class="btn btn--small" id="move-btn">Move</button>
+        </div>
+      </div>`
+      }
     `;
+
+    document.getElementById('add-embed-btn').addEventListener('click', () => {
+      document.getElementById('embeds-rows').insertAdjacentHTML('beforeend', embedRowsHtml(['']));
+    });
+    document.getElementById('embeds-rows').addEventListener('click', e => {
+      if (e.target.classList.contains('detail-row__remove')) e.target.closest('.detail-row').remove();
+    });
+    if (!isNew) {
+      document.getElementById('move-btn').addEventListener('click', () => moveItem(key, data.slug, document.getElementById('f-section').value));
+    }
 
     document.getElementById('add-detail-btn').addEventListener('click', () => {
       document.getElementById('details-rows').insertAdjacentHTML('beforeend', detailsRowsHtml([{ label: '', value: '' }]));
@@ -521,6 +554,7 @@
       cardLabel: document.getElementById('f-cardLabel').value,
       cardSummary: document.getElementById('f-cardSummary').value,
       link: document.getElementById('f-link').value,
+      embeds: Array.from(document.querySelectorAll('#embeds-rows .embed-url')).map(input => input.value.trim()).filter(Boolean),
       details,
       images: [...state.currentImages],
       body: document.getElementById('f-body').value
@@ -535,10 +569,31 @@
     return fields;
   }
 
+  // Media links the site can turn into a player -- mirrors embedFor() in
+  // scripts/build.mjs, which skips anything else.
+  const EMBED_HOSTS = /^https?:\/\/(www\.|m\.|music\.)?(youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com|soundcloud\.com|open\.spotify\.com)\//i;
+
+  function embedRowsHtml(urls) {
+    return (urls || [])
+      .map(
+        url => `
+        <div class="detail-row">
+          <input type="text" class="embed-url" placeholder="https://www.youtube.com/watch?v=… or https://soundcloud.com/…" value="${escapeHtml(url)}">
+          <button type="button" class="detail-row__remove" title="Remove">&times;</button>
+        </div>`
+      )
+      .join('');
+  }
+
   async function saveItem(key, slug, collection) {
     const fields = collectItemFields();
     if (!fields.title.trim()) {
       toast('Title is required.', 'error');
+      return;
+    }
+    const unsupported = fields.embeds.filter(url => !EMBED_HOSTS.test(url));
+    if (unsupported.length) {
+      toast(`This link can't be played on the page: ${unsupported[0]} — use a YouTube, Vimeo, SoundCloud or Spotify link, or put it in the Link field instead.`, 'error');
       return;
     }
     try {
@@ -552,6 +607,30 @@
         await renderFolderCollection(key, collection);
         openEntry(key, created.slug, collection);
       }
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+  }
+
+  // Saves any edits first, so nothing typed into the form is lost, then
+  // moves the entry and opens it in its new section.
+  async function moveItem(key, slug, to) {
+    if (to === key) {
+      toast('Choose a different section to move this entry to.', 'error');
+      return;
+    }
+    const target = state.collections.find(c => c.key === to);
+    const fields = collectItemFields();
+    if (!fields.title.trim()) {
+      toast('Title is required.', 'error');
+      return;
+    }
+    try {
+      await api(`/collections/${key}/entries/${encodeURIComponent(slug)}`, { method: 'PUT', body: JSON.stringify(fields) });
+      const moved = await api(`/collections/${key}/entries/${encodeURIComponent(slug)}/move`, { method: 'POST', body: JSON.stringify({ to }) });
+      toast(`Moved to ${target.label}.`, 'ok');
+      await selectCollection(to);
+      openEntry(to, moved.slug, target);
     } catch (error) {
       toast(error.message, 'error');
     }
@@ -574,7 +653,7 @@
   // Custom pages (a plain folder collection, but a simpler field shape --
   // title + order + optional image + body, no card/detail-list/cross-link
   // fields. Each one gets its own nav link, in creation/order sequence,
-  // between Art & Culture Projects and About.)
+  // between Work and About.)
   // ---------------------------------------------------------------------
 
   function renderPageEntryForm(key, entry, collection) {
@@ -660,7 +739,49 @@
     if (key === 'home') renderHomeForm(data);
     else if (key === 'about') renderAboutForm(data);
     else if (key === 'contact') renderContactForm(data);
+    else if (key === 'subtitles') renderSubtitlesForm(data);
     else renderSettingsForm(data);
+  }
+
+  // One optional line under each section's heading. Every section has a
+  // box; only the ticked ones appear on the site, so a subtitle can be
+  // written now and switched on later.
+  function renderSubtitlesForm(data) {
+    const slot = document.getElementById('editor-slot');
+    const sections = data.sections || [];
+    slot.innerHTML = `
+      <div class="editor__header"><span class="editor__title">Section Subtitles</span><div class="editor__actions"><button class="btn btn--primary" id="save-btn">Save</button></div></div>
+      <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;">A short line under a section's heading, saying what that section is about. Tick "Show" for the ones you want on the site; unticked ones are kept here but hidden.</p>
+      ${sections
+        .map(
+          (s, i) => `
+      <div class="field subtitle-row" data-index="${i}">
+        <div class="subtitle-row__head">
+          <span class="subtitle-row__name">${escapeHtml(s.heading)}</span>
+          <label class="subtitle-row__show"><input type="checkbox" class="subtitle-show"${s.show ? ' checked' : ''}> Show</label>
+        </div>
+        <input type="text" class="subtitle-text" value="${escapeHtml(s.text)}" placeholder="One line, e.g. what kind of work this is">
+      </div>`
+        )
+        .join('')}
+    `;
+
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      const rows = slot.querySelectorAll('.subtitle-row');
+      const payload = {
+        sections: sections.map((s, i) => ({
+          ...s,
+          text: rows[i].querySelector('.subtitle-text').value.trim(),
+          show: rows[i].querySelector('.subtitle-show').checked
+        }))
+      };
+      try {
+        await api('/pages/subtitles', { method: 'PUT', body: JSON.stringify(payload) });
+        toast('Saved.', 'ok');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    });
   }
 
   function listFieldHtml(idPrefix, items, columns) {
@@ -700,7 +821,7 @@
   }
 
   // About/Contact don't have one fixed hero photo the way Sound/Production &
-  // Curation/Art & Culture Projects do -- these two instead take a batch of images, and
+  // Curation/Cultural Projects/Work do -- these two instead take a batch of images, and
   // the site shows a different one at random each visit (build.mjs +
   // script.js). Everything else on this form is one card = one set of
   // fields; these two need their own small multi-image gallery in the
@@ -738,7 +859,7 @@
         <input type="text" id="f-tagline" value="${escapeHtml(data.tagline || '')}">
       </div>
 
-      <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;">The 5 large cards on the home page. Order here is left-to-right, top-to-bottom.</p>
+      <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;">The ${data.cards.length} large cards on the home page. Order here is left-to-right, top-to-bottom.</p>
       ${data.cards
         .map((card, i) => {
           const isGallery = GALLERY_CARD_KEYS.includes(card.key);

@@ -19,15 +19,23 @@
     },
     {
       "key": "cultural",
-      "label": "03 — Art & Culture Projects",
-      "title": "Art & Culture Projects",
+      "label": "03 — Cultural Projects",
+      "title": "Cultural Projects",
       "summary": "Artist development, longer-term collaborations, and community-rooted creative work.",
       "href": "cultural-projects.html",
       "image": "images/uploads/ti0a9382.jpg"
     },
     {
+      "key": "work",
+      "label": "04 — Work",
+      "title": "Work",
+      "summary": "Daisy's own work as an artist.",
+      "href": "work.html",
+      "image": ""
+    },
+    {
       "key": "about",
-      "label": "04 — About",
+      "label": "05 — About",
       "title": "About",
       "summary": "A closer look at the work — bio, awards, residencies, and selected clients.",
       "href": "about.html",
@@ -37,7 +45,7 @@
     },
     {
       "key": "contact",
-      "label": "05 — Contact",
+      "label": "06 — Contact",
       "title": "Contact",
       "summary": "For bookings, collaborations, or a first conversation.",
       "href": "contact.html",

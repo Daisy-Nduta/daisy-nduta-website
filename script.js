@@ -253,7 +253,7 @@
         context.stroke();
     }
 
-    /* Art & Culture Projects: a drifting network, the pointer joins as a node. */
+    /* Cultural Projects: a drifting network, the pointer joins as a node. */
     function drawConstellation() {
         const linkRadius = Math.min(width, height) * .2;
         const mouseNode = { x: smoothX * width, y: smoothY * height };
