@@ -2,7 +2,9 @@
 title: 'So Fresh So Clean, Triple R Radio'
 order: 3
 cardLabel: 2017–2021
-cardSummary: Recording Engineer. Producer & Host.
+cardSummary: >-
+  I produced and hosted this radio show within the 4 years, highlighting African
+  and Black artists across the continent and diaspora. 
 link: 'https://www.rrr.org.au/explore/programs/so-fresh-so-clean'
 embeds: []
 details:
