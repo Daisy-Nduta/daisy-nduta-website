@@ -4,6 +4,7 @@ order: 1
 cardLabel: 2025 - 2026
 cardSummary: Project Coordinator
 link: 'https://eunic.eu/projects/kenya-frequency-shift'
+embeds: []
 details:
   - label: Role
     value: Project Coordinator
@@ -16,4 +17,4 @@ crossListedLabel: ''
 crossListedHref: ''
 crossListedText: ''
 ---
-Frequency Shift strengthened The Mall in Westlands as a community-driven cultural ecosystem, bringing together radio, storytelling, skills development, immersive media, live performance and international exchange. It established Calotropis Radio as a functioning community studio, connected Nairobi creatives to international radio networks, and supported major programming including Kilele Summit 2026, which reached 3,250 attendees and 20,000–25,000 additional listeners internationally. The project also delivered an 11-episode audio-visual podcast series, trained emerging creatives in AI and podcast production, and facilitated AR and experimental performance work. Beyond these outputs, it created lasting technical, artistic and international connections that continue beyond the project period.
+Project Coordinator for Frequency Shift, a cultural project strengthening The Mall as a community-driven creative ecosystem. Managed project budgets, creative partnerships and international exchanges across BlackRhino, Creatives Garage, Santuri and Calotropis. Supported the delivery of programming across community radio, storytelling, skills development, immersive media and live performance, including the development of Calotropis Radio and international radio exchanges. Led programming for Kilele Summit 2026, reaching 3,250 attendees and an estimated 20,000–25,000 additional listeners internationally. The project also delivered an 11-episode audio-visual podcast series, creative workshops, AR projects and experimental performances.
