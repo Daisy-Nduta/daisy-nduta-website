@@ -37,8 +37,14 @@
     <p class="eyebrow">Cultural Projects</p>
     <h1>Kaya</h1>
     <div class="image-gallery">
-        <img src="images/uploads/crop-25.jpg" srcset="images/uploads/sized/crop-25-800.jpg 800w, images/uploads/sized/crop-25-1400.jpg 1400w, images/uploads/crop-25.jpg 2000w" sizes="(max-width: 700px) 82vw, 680px" alt="Kaya" decoding="async">
-        <img src="images/uploads/crop-29.jpg" srcset="images/uploads/sized/crop-29-800.jpg 800w, images/uploads/sized/crop-29-1400.jpg 1400w, images/uploads/crop-29.jpg 2000w" sizes="(max-width: 700px) 82vw, 680px" alt="Kaya" loading="lazy" decoding="async">
+        <button type="button" class="image-gallery__main" aria-label="Enlarge image">
+          <img class="image-gallery__slide is-active" src="images/uploads/crop-25.jpg" srcset="images/uploads/sized/crop-25-800.jpg 800w, images/uploads/sized/crop-25-1400.jpg 1400w, images/uploads/crop-25.jpg 2000w" sizes="(max-width: 700px) 100vw, 840px" alt="Kaya" decoding="async">
+          <img class="image-gallery__slide" src="images/uploads/crop-29.jpg" srcset="images/uploads/sized/crop-29-800.jpg 800w, images/uploads/sized/crop-29-1400.jpg 1400w, images/uploads/crop-29.jpg 2000w" sizes="(max-width: 700px) 100vw, 840px" alt="Kaya" loading="lazy" decoding="async">
+        </button>
+        <div class="image-gallery__thumbs">
+          <button type="button" class="image-gallery__thumb is-active" aria-label="Show image 1 of 2" aria-current="true"><img src="images/uploads/crop-25.jpg" srcset="images/uploads/sized/crop-25-800.jpg 800w, images/uploads/sized/crop-25-1400.jpg 1400w, images/uploads/crop-25.jpg 2000w" sizes="(max-width: 700px) 88px, 140px" alt="" loading="lazy" decoding="async"></button>
+          <button type="button" class="image-gallery__thumb" aria-label="Show image 2 of 2" aria-current="false"><img src="images/uploads/crop-29.jpg" srcset="images/uploads/sized/crop-29-800.jpg 800w, images/uploads/sized/crop-29-1400.jpg 1400w, images/uploads/crop-29.jpg 2000w" sizes="(max-width: 700px) 88px, 140px" alt="" loading="lazy" decoding="async"></button>
+        </div>
       </div>
     <div class="project-copy">
         <p>“Kaya&quot; means home in Digo (coastal tribe in Kenya). Home is often alluded to as a house which is related but not the same. Kaya gives different perspectives of what home looks like for different people through an audio-visual and a live immersive performance.</p>

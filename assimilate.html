@@ -37,8 +37,14 @@
     <p class="eyebrow">Cultural Projects</p>
     <h1>Assimilate</h1>
     <div class="image-gallery">
-        <img src="images/uploads/crop-27.jpg" srcset="images/uploads/sized/crop-27-800.jpg 800w, images/uploads/sized/crop-27-1400.jpg 1400w, images/uploads/crop-27.jpg 1600w" sizes="(max-width: 700px) 82vw, 680px" alt="Assimilate" decoding="async">
-        <img src="images/uploads/crop-28.jpg" srcset="images/uploads/sized/crop-28-800.jpg 800w, images/uploads/sized/crop-28-1400.jpg 1400w, images/uploads/crop-28.jpg 1600w" sizes="(max-width: 700px) 82vw, 680px" alt="Assimilate" loading="lazy" decoding="async">
+        <button type="button" class="image-gallery__main" aria-label="Enlarge image">
+          <img class="image-gallery__slide is-active" src="images/uploads/crop-27.jpg" srcset="images/uploads/sized/crop-27-800.jpg 800w, images/uploads/sized/crop-27-1400.jpg 1400w, images/uploads/crop-27.jpg 1600w" sizes="(max-width: 700px) 100vw, 840px" alt="Assimilate" decoding="async">
+          <img class="image-gallery__slide" src="images/uploads/crop-28.jpg" srcset="images/uploads/sized/crop-28-800.jpg 800w, images/uploads/sized/crop-28-1400.jpg 1400w, images/uploads/crop-28.jpg 1600w" sizes="(max-width: 700px) 100vw, 840px" alt="Assimilate" loading="lazy" decoding="async">
+        </button>
+        <div class="image-gallery__thumbs">
+          <button type="button" class="image-gallery__thumb is-active" aria-label="Show image 1 of 2" aria-current="true"><img src="images/uploads/crop-27.jpg" srcset="images/uploads/sized/crop-27-800.jpg 800w, images/uploads/sized/crop-27-1400.jpg 1400w, images/uploads/crop-27.jpg 1600w" sizes="(max-width: 700px) 88px, 140px" alt="" loading="lazy" decoding="async"></button>
+          <button type="button" class="image-gallery__thumb" aria-label="Show image 2 of 2" aria-current="false"><img src="images/uploads/crop-28.jpg" srcset="images/uploads/sized/crop-28-800.jpg 800w, images/uploads/sized/crop-28-1400.jpg 1400w, images/uploads/crop-28.jpg 1600w" sizes="(max-width: 700px) 88px, 140px" alt="" loading="lazy" decoding="async"></button>
+        </div>
       </div>
     <div class="project-copy">
         <p>Assimilate is a storytelling-driven piece that uses movement, song, soundscapes and visuals to represent what assimilation is versus integration. It does this by exploring themes of language, identity, belonging, migration, detachment and community.</p>

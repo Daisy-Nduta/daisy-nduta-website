@@ -58,7 +58,8 @@ function homeCardImage(key) {
 const IMAGE_SIZES = {
     itemCard: '(max-width: 700px) 100vw, 400px',
     entryCard: '(max-width: 700px) 92vw, 560px',
-    gallery: '(max-width: 700px) 82vw, 680px',
+    gallery: '(max-width: 700px) 100vw, 840px',
+    thumb: '(max-width: 700px) 88px, 140px',
     portrait: '(max-width: 700px) 100vw, 600px'
 };
 
@@ -390,8 +391,9 @@ function entryCardMedia(card) {
     return `<div class="entry-card__media"><img ${imgAttrs(list[0], card.title, IMAGE_SIZES.entryCard, { lazy: false })}${dataAttr}></div>`;
 }
 
-// A credit/project or client-added page can carry several images now (a
-// simple side-scrolling row, not a click-to-swap gallery -- see AGENTS.md).
+// A credit/project or client-added page can carry several images: shown as
+// one large photo that switches every few seconds, with thumbnails beside
+// it (see AGENTS.md).
 // Card grids still only ever show one representative thumbnail per item
 // (mediaBlock() above, fed the first image) -- this is only for the
 // item/page's own detail page, where all of them are shown.
@@ -402,8 +404,27 @@ function imageGallery(images, alt, pendingText) {
     }
     // The first photo is at the top of the page; the rest are further along
     // the side-scrolling row, so they can wait until needed.
-    const imgs = list.map((src, i) => `<img ${imgAttrs(src, alt, IMAGE_SIZES.gallery, { lazy: i > 0 })}>`).join('\n        ');
-    return `<div class="image-gallery">\n        ${imgs}\n      </div>`;
+    // One large photo (all of them stacked, crossfaded by script.js; clicking
+    // opens the lightbox) plus a strip of thumbnails to switch between them.
+    const slides = list
+        .map((src, i) => `<img class="image-gallery__slide${i === 0 ? ' is-active' : ''}" ${imgAttrs(src, alt, IMAGE_SIZES.gallery, { lazy: i > 0 })}>`)
+        .join('\n          ');
+    const main = `<button type="button" class="image-gallery__main" aria-label="Enlarge image">
+          ${slides}
+        </button>`;
+    if (list.length === 1) return `<div class="image-gallery image-gallery--single">\n        ${main}\n      </div>`;
+    const thumbs = list
+        .map(
+            (src, i) =>
+                `<button type="button" class="image-gallery__thumb${i === 0 ? ' is-active' : ''}" aria-label="Show image ${i + 1} of ${list.length}" aria-current="${i === 0}"><img ${imgAttrs(src, '', IMAGE_SIZES.thumb)}></button>`
+        )
+        .join('\n          ');
+    return `<div class="image-gallery">
+        ${main}
+        <div class="image-gallery__thumbs">
+          ${thumbs}
+        </div>
+      </div>`;
 }
 
 function itemCard(item) {

@@ -584,49 +584,69 @@
     startAutoplay();
 })();
 
-// Project-page image galleries (.image-gallery, only rendered by build.mjs
-// for items with 1+ images): when there are 2+ images, step to the next one
-// every few seconds and loop back to the start after the last. Pauses while
-// the visitor is hovering, focused inside, or touching the gallery (and for
-// a moment after they let go, so a manual swipe isn't immediately undone);
-// skipped entirely under prefers-reduced-motion.
+// Project/page photo galleries (.image-gallery, rendered by build.mjs for
+// items with 1+ images): one large photo plus a strip of thumbnails. With 2+
+// photos the large one crossfades to the next every few seconds, looping;
+// clicking a thumbnail shows that photo instead. Autoplay pauses while the
+// visitor is hovering, focused inside, or touching the gallery (and for a
+// moment after, so their choice isn't immediately replaced), and is off
+// under prefers-reduced-motion. Clicking the large photo opens the lightbox
+// below.
+const galleryControllers = new Map();
+
 (() => {
     const galleries = document.querySelectorAll('.image-gallery');
     if (!galleries.length) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const GALLERY_AUTOPLAY_MS = 3500;
     const RESUME_DELAY_MS = 4000;
 
     galleries.forEach(gallery => {
-        const images = gallery.querySelectorAll('img');
-        if (images.length < 2) return;
+        const slides = [...gallery.querySelectorAll('.image-gallery__slide')];
+        const thumbs = [...gallery.querySelectorAll('.image-gallery__thumb')];
+        const strip = gallery.querySelector('.image-gallery__thumbs');
+        let current = 0;
+
+        function show(i) {
+            current = (i + slides.length) % slides.length;
+            slides.forEach((slide, n) => slide.classList.toggle('is-active', n === current));
+            thumbs.forEach((thumb, n) => {
+                const active = n === current;
+                thumb.classList.toggle('is-active', active);
+                thumb.setAttribute('aria-current', active ? 'true' : 'false');
+            });
+            // Keep the active thumbnail in view without moving the page itself.
+            const thumb = thumbs[current];
+            if (strip && thumb) {
+                const horizontal = strip.scrollWidth > strip.clientWidth;
+                strip.scrollTo({
+                    left: horizontal ? thumb.offsetLeft - (strip.clientWidth - thumb.offsetWidth) / 2 : 0,
+                    top: horizontal ? 0 : thumb.offsetTop - (strip.clientHeight - thumb.offsetHeight) / 2,
+                    behavior: reduceMotion ? 'auto' : 'smooth'
+                });
+            }
+        }
+
+        galleryControllers.set(gallery, { show, slides, get current() { return current; } });
+
+        gallery.addEventListener('click', event => {
+            const thumb = event.target.closest('.image-gallery__thumb');
+            if (thumb) show(thumbs.indexOf(thumb));
+        });
+
+        if (slides.length < 2 || reduceMotion) return;
 
         let paused = false;
         let resumeTimer = null;
-
-        function pause() {
+        const pause = () => {
             paused = true;
             clearTimeout(resumeTimer);
-        }
-
-        function resumeLater() {
+        };
+        const resumeLater = () => {
             clearTimeout(resumeTimer);
             resumeTimer = setTimeout(() => { paused = false; }, RESUME_DELAY_MS);
-        }
-
-        // Position of each image within the gallery's own scroll coordinates,
-        // measured fresh each step so it stays right across resizes.
-        function offsetOf(img) {
-            return img.getBoundingClientRect().left - gallery.getBoundingClientRect().left + gallery.scrollLeft;
-        }
-
-        function step() {
-            if (paused || document.hidden) return;
-            const atEnd = gallery.scrollLeft + gallery.clientWidth >= gallery.scrollWidth - 2;
-            const nextImg = atEnd ? null : [...images].find(img => offsetOf(img) > gallery.scrollLeft + 2);
-            gallery.scrollTo({ left: nextImg ? offsetOf(nextImg) : 0, behavior: 'smooth' });
-        }
+        };
 
         gallery.addEventListener('mouseenter', pause);
         gallery.addEventListener('mouseleave', resumeLater);
@@ -635,6 +655,117 @@
         gallery.addEventListener('touchstart', pause, { passive: true });
         gallery.addEventListener('touchend', resumeLater, { passive: true });
 
-        setInterval(step, GALLERY_AUTOPLAY_MS);
+        setInterval(() => {
+            // The lightbox covers the gallery, so the pointer "leaves" it and
+            // the hover pause ends -- don't switch photos underneath it.
+            if (paused || document.hidden || document.body.classList.contains('lightbox-open')) return;
+            show(current + 1);
+        }, GALLERY_AUTOPLAY_MS);
+    });
+})();
+
+// Click-to-enlarge viewer for gallery photos. Clicking the large photo opens
+// the gallery full-screen at that photo, stepped with the arrows, arrow keys,
+// or a swipe. Closes on Esc, the x, or a click on the dark backdrop, then
+// leaves the gallery showing the last photo viewed and hands focus back.
+(() => {
+    if (!galleryControllers.size) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ARROW = dir =>
+        `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${dir === 'prev' ? '<polyline points="15 18 9 12 15 6"></polyline>' : '<polyline points="9 18 15 12 9 6"></polyline>'}</svg>`;
+
+    let overlay = null;
+    let controller = null;
+    let returnFocus = null;
+    let index = 0;
+    let touchX = null;
+
+    function build() {
+        overlay = document.createElement('div');
+        overlay.className = 'lightbox';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'Enlarged image');
+        overlay.innerHTML = `
+            <img class="lightbox__img" alt="">
+            <button type="button" class="lightbox__btn lightbox__close" aria-label="Close">&times;</button>
+            <button type="button" class="lightbox__btn lightbox__prev" aria-label="Previous image">${ARROW('prev')}</button>
+            <button type="button" class="lightbox__btn lightbox__next" aria-label="Next image">${ARROW('next')}</button>
+            <p class="lightbox__count" aria-live="polite"></p>`;
+        overlay.addEventListener('click', event => {
+            if (event.target.closest('.lightbox__close') || event.target === overlay) close();
+            else if (event.target.closest('.lightbox__prev')) show(index - 1);
+            else if (event.target.closest('.lightbox__next')) show(index + 1);
+        });
+        overlay.addEventListener('touchstart', event => { touchX = event.touches[0].clientX; }, { passive: true });
+        overlay.addEventListener('touchend', event => {
+            if (touchX === null) return;
+            const dx = event.changedTouches[0].clientX - touchX;
+            touchX = null;
+            if (Math.abs(dx) > 40 && controller.slides.length > 1) show(index + (dx < 0 ? 1 : -1));
+        }, { passive: true });
+    }
+
+    function show(i) {
+        const total = controller.slides.length;
+        index = (i + total) % total;
+        const source = controller.slides[index];
+        const img = overlay.querySelector('.lightbox__img');
+        // The full upload plus its resized copies -- the browser picks the
+        // best fit for a full-screen view.
+        img.removeAttribute('srcset');
+        img.src = source.getAttribute('src');
+        if (source.getAttribute('srcset')) {
+            img.srcset = source.getAttribute('srcset');
+            img.sizes = '90vw';
+        }
+        img.alt = source.alt;
+        overlay.querySelector('.lightbox__count').textContent = total > 1 ? `${index + 1} / ${total}` : '';
+    }
+
+    function onKey(event) {
+        const many = controller.slides.length > 1;
+        if (event.key === 'Escape') close();
+        else if (event.key === 'ArrowLeft' && many) show(index - 1);
+        else if (event.key === 'ArrowRight' && many) show(index + 1);
+        else if (event.key === 'Tab') {
+            // Keep keyboard focus inside the viewer while it's open.
+            const buttons = [...overlay.querySelectorAll('button')].filter(b => b.style.display !== 'none');
+            const at = buttons.indexOf(document.activeElement);
+            event.preventDefault();
+            buttons[(at + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus();
+        }
+    }
+
+    function open(gallery, trigger) {
+        if (!overlay) build();
+        controller = galleryControllers.get(gallery);
+        returnFocus = trigger;
+        const single = controller.slides.length < 2;
+        overlay.querySelector('.lightbox__prev').style.display = single ? 'none' : '';
+        overlay.querySelector('.lightbox__next').style.display = single ? 'none' : '';
+        show(controller.current);
+        document.body.appendChild(overlay);
+        document.body.classList.add('lightbox-open');
+        document.addEventListener('keydown', onKey);
+        requestAnimationFrame(() => overlay.classList.add('is-open'));
+        overlay.querySelector('.lightbox__close').focus();
+    }
+
+    function close() {
+        overlay.classList.remove('is-open');
+        document.body.classList.remove('lightbox-open');
+        document.removeEventListener('keydown', onKey);
+        controller.show(index);
+        returnFocus.focus({ preventScroll: true });
+        setTimeout(() => {
+            if (!overlay.classList.contains('is-open')) overlay.remove();
+        }, reduceMotion ? 0 : 250);
+    }
+
+    galleryControllers.forEach((_, gallery) => {
+        const main = gallery.querySelector('.image-gallery__main');
+        main.addEventListener('click', () => open(gallery, main));
     });
 })();
