@@ -4,12 +4,15 @@ order: 3
 cardLabel: Curator & Producer
 cardSummary: 'Artists: Cool Out Sun, Soli, Amadou and African Love Grass'
 link: 'https://mpavilion.org'
+embeds: []
 details:
   - label: Role
     value: Curator & Producer
 images:
-  - images/uploads/crop-41.jpg
-  - images/uploads/crop-42.jpg
+  - images/uploads/crop-55.jpg
+  - images/uploads/crop-56.jpg
+  - images/uploads/crop-57.jpg
+  - images/uploads/crop-58.jpg
 ---
 Programmed and produced a music showcase for MPavilion’s Friday Sunset Series, featuring African diaspora artists Cool Out Sun, Soli, Amadou and African Love Grass. Led the project from planning through delivery, including developing the programme schedule and set times, preparing the marketing plan, managing the budget, and overseeing on-site coordination and event logistics.
 

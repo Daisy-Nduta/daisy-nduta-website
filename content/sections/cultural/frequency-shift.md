@@ -12,6 +12,7 @@ details:
     value: Community-driven initiative building a multimedia cultural radio platform
 images:
   - images/uploads/crop-34.jpg
+  - images/uploads/crop-61.jpg
 alsoShowOn: ''
 crossListedLabel: ''
 crossListedHref: ''

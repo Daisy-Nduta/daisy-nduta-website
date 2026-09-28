@@ -21,6 +21,7 @@ details:
 images:
   - images/uploads/crop-27.jpg
   - images/uploads/crop-28.jpg
+  - images/uploads/crop-59.jpg
 ---
 Assimilate is a storytelling-driven piece that uses movement, song, soundscapes and visuals to represent what assimilation is versus integration. It does this by exploring themes of language, identity, belonging, migration, detachment and community.
 The show explored these themes through the voice of four women.
