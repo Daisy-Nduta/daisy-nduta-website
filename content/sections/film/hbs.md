@@ -9,6 +9,6 @@ details:
   - label: Role
     value: Sound Design & Audio Production
 images:
-  - images/uploads/crop-70.jpg
+  - images/uploads/crop-71.jpg
 ---
 Worked as part of the production team on the sound mix and design for the Heinrich Böll Foundation’s policy video on Protection from Sexual Exploitation, Abuse and Harassment (PSEAH). I shaped the music and audio production, mixing and mastering to support a clear and accessible visual narrative around safe, respectful and accountable working environments.

@@ -349,12 +349,12 @@
     "height": 230,
     "variants": {}
   },
-  "crop-70.jpg": {
-    "width": 1961,
-    "height": 1471,
+  "crop-71.jpg": {
+    "width": 1926,
+    "height": 1445,
     "variants": {
-      "800": "images/uploads/sized/crop-70-800.jpg",
-      "1400": "images/uploads/sized/crop-70-1400.jpg"
+      "800": "images/uploads/sized/crop-71-800.jpg",
+      "1400": "images/uploads/sized/crop-71-1400.jpg"
     }
   },
   "crop-8.jpg": {
