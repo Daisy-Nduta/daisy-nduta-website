@@ -2,12 +2,13 @@
 title: mau from nowhere
 order: 2
 cardLabel: 2025 - 2026
-cardSummary: 'Artist Management / Development'
+cardSummary: Artist Management & Development
 link: >-
   https://linktr.ee/maufromnowhere?utm_source=linktree_profile_share&ltsid=9bf9ae12-a302-4377-82fe-b42decce8e60
+embeds: []
 details:
   - label: Role
-    value: 'Artist Management / Development'
+    value: Artist Management & Development
   - label: Focus
     value: 'Creative direction, strategy, partnerships'
 images:

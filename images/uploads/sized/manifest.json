@@ -55,13 +55,6 @@
       "1400": "images/uploads/sized/crop-20-1400.jpg"
     }
   },
-  "crop-21.jpg": {
-    "width": 1368,
-    "height": 1026,
-    "variants": {
-      "800": "images/uploads/sized/crop-21-800.jpg"
-    }
-  },
   "crop-22.jpg": {
     "width": 2000,
     "height": 1500,
