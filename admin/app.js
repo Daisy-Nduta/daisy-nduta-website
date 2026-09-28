@@ -462,13 +462,13 @@
       </div>
 
       <div class="field">
-        <label class="field__label">Link (optional — if this is online, e.g. Vimeo/YouTube/an article, shown as "View online" on the project page)</label>
+        <label class="field__label">Link (optional — a YouTube, Vimeo, SoundCloud, Spotify or Bandcamp link plays right on the project page; any other link, e.g. an article, shows as "View online")</label>
         <input type="text" id="f-link" placeholder="https://…" value="${escapeHtml(data.link)}">
       </div>
 
       <div class="field">
-        <label class="field__label">Embedded media (optional — plays right on the project page)</label>
-        <p style="font-size:13px;color:rgba(32,30,31,.6);margin-bottom:8px;">Paste the normal link to a YouTube or Vimeo video, a SoundCloud track or playlist, or a Spotify track, album, playlist or episode. Add as many as you like.</p>
+        <label class="field__label">More media (optional — extra players below the one from the Link above)</label>
+        <p style="font-size:13px;color:rgba(32,30,31,.6);margin-bottom:8px;">Paste the normal link to a YouTube or Vimeo video, a SoundCloud track or playlist, a Spotify track, album, playlist or episode, or a Bandcamp album or track. Add as many as you like.</p>
         <div id="embeds-rows">${embedRowsHtml(data.embeds)}</div>
         <button type="button" class="btn btn--small" id="add-embed-btn">+ Add media</button>
       </div>
@@ -571,7 +571,7 @@
 
   // Media links the site can turn into a player -- mirrors embedFor() in
   // scripts/build.mjs, which skips anything else.
-  const EMBED_HOSTS = /^https?:\/\/(www\.|m\.|music\.)?(youtube\.com|youtu\.be|vimeo\.com|player\.vimeo\.com|soundcloud\.com|open\.spotify\.com)\//i;
+  const EMBED_HOSTS = /^https?:\/\/([\w-]+\.)?(youtube\.com|youtu\.be|vimeo\.com|soundcloud\.com|open\.spotify\.com|bandcamp\.com)\//i;
 
   function embedRowsHtml(urls) {
     return (urls || [])
@@ -593,17 +593,17 @@
     }
     const unsupported = fields.embeds.filter(url => !EMBED_HOSTS.test(url));
     if (unsupported.length) {
-      toast(`This link can't be played on the page: ${unsupported[0]} — use a YouTube, Vimeo, SoundCloud or Spotify link, or put it in the Link field instead.`, 'error');
+      toast(`This link can't be played on the page: ${unsupported[0]} — use a YouTube, Vimeo, SoundCloud, Spotify or Bandcamp link, or put it in the Link field instead.`, 'error');
       return;
     }
     try {
       if (slug) {
-        await api(`/collections/${key}/entries/${encodeURIComponent(slug)}`, { method: 'PUT', body: JSON.stringify(fields) });
-        toast('Saved.', 'ok');
+        const saved = await api(`/collections/${key}/entries/${encodeURIComponent(slug)}`, { method: 'PUT', body: JSON.stringify(fields) });
+        toast(saved.warning ? `Saved. ${saved.warning}` : 'Saved.', saved.warning ? 'error' : 'ok');
         openEntry(key, slug, collection);
       } else {
         const created = await api(`/collections/${key}/entries`, { method: 'POST', body: JSON.stringify(fields) });
-        toast('Entry created.', 'ok');
+        toast(created.warning ? `Entry created. ${created.warning}` : 'Entry created.', created.warning ? 'error' : 'ok');
         await renderFolderCollection(key, collection);
         openEntry(key, created.slug, collection);
       }

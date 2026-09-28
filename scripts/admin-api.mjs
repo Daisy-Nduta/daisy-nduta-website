@@ -12,7 +12,7 @@ import express from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
 import matter from 'gray-matter';
-import { FOLDER_COLLECTIONS, FILE_COLLECTIONS, CROSS_LINK_COLLECTIONS, RESERVED_PAGE_SLUGS, GOATCOUNTER_SITE, isFolderCollection, isFileCollection } from './schema.mjs';
+import { FOLDER_COLLECTIONS, FILE_COLLECTIONS, CROSS_LINK_COLLECTIONS, RESERVED_PAGE_SLUGS, GOATCOUNTER_SITE, EMBED_LOOKUPS_FILE, bandcampPageKey, isFolderCollection, isFileCollection } from './schema.mjs';
 
 // Uploaded photos get resized/re-encoded before they ever touch disk --
 // portfolio photos routinely come out of a phone/camera at several MB and
@@ -68,6 +68,44 @@ export function createAdminApi(ROOT) {
         fs.writeFileSync(path.join(dir, `${slug}.md`), out);
     }
 
+    // Bandcamp links in a saved entry (its Link or Embedded media) get their
+    // album/track number looked up once and recorded in EMBED_LOOKUPS_FILE,
+    // so the build can turn them into players (see schema.mjs). Done before
+    // the entry is written, so the rebuild that write triggers already has
+    // it. Returns a message for any link that couldn't be looked up; the
+    // entry still saves, and that link just stays a plain link.
+    async function lookupBandcamp(fields) {
+        const lookupsPath = path.join(ROOT, EMBED_LOOKUPS_FILE);
+        let lookups = {};
+        try {
+            lookups = JSON.parse(fs.readFileSync(lookupsPath, 'utf8'));
+        } catch {
+            lookups = {};
+        }
+        const keys = [fields.link, ...(Array.isArray(fields.embeds) ? fields.embeds : [])]
+            .map(bandcampPageKey)
+            .filter(key => key && !lookups[key]);
+        if (!keys.length) return null;
+
+        const failed = [];
+        for (const key of new Set(keys)) {
+            const type = key.split('/')[3];
+            try {
+                const response = await fetch(key, { signal: AbortSignal.timeout(10000) });
+                const html = await response.text();
+                const match = html.match(new RegExp(`\\b${type}=(\\d+)`));
+                if (!response.ok || !match) throw new Error('not found');
+                lookups[key] = { type, id: match[1] };
+            } catch {
+                failed.push(key);
+            }
+        }
+        fs.writeFileSync(lookupsPath, JSON.stringify(lookups, null, 2) + '\n');
+        return failed.length
+            ? `Couldn't reach Bandcamp to set up the player for ${failed.join(', ')} -- it's saved as a plain link for now. Save again later to retry.`
+            : null;
+    }
+
     // ---- collections ----
 
     router.get('/collections', (req, res) => {
@@ -103,7 +141,7 @@ export function createAdminApi(ROOT) {
         res.json({ entry });
     });
 
-    router.post('/collections/:key/entries', (req, res) => {
+    router.post('/collections/:key/entries', async (req, res) => {
         const { key } = req.params;
         if (!isFolderCollection(key)) return res.status(404).json({ error: 'Unknown collection' });
         const fields = req.body || {};
@@ -125,6 +163,7 @@ export function createAdminApi(ROOT) {
             return res.json({ slug });
         }
 
+        const warning = await lookupBandcamp(fields);
         writeEntry(key, slug, {
             title: fields.title,
             order: fields.order ?? 99,
@@ -144,10 +183,10 @@ export function createAdminApi(ROOT) {
                 : {}),
             body: fields.body || ''
         });
-        res.json({ slug });
+        res.json({ slug, warning });
     });
 
-    router.put('/collections/:key/entries/:slug', (req, res) => {
+    router.put('/collections/:key/entries/:slug', async (req, res) => {
         const { key, slug } = req.params;
         if (!isFolderCollection(key)) return res.status(404).json({ error: 'Unknown collection' });
         if (!fs.existsSync(path.join(folderPath(key), `${slug}.md`))) return res.status(404).json({ error: 'Entry not found' });
@@ -164,8 +203,9 @@ export function createAdminApi(ROOT) {
             return res.json({ ok: true });
         }
 
+        const warning = await lookupBandcamp(req.body || {});
         writeEntry(key, slug, req.body || {});
-        res.json({ ok: true });
+        res.json({ ok: true, warning });
     });
 
     // Moves a credit/project to another section (e.g. Cultural Projects ->

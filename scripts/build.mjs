@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
-import { RESERVED_PAGE_SLUGS, DEFAULT_ACCENT_COLOR, GOATCOUNTER_SITE } from './schema.mjs';
+import { RESERVED_PAGE_SLUGS, DEFAULT_ACCENT_COLOR, GOATCOUNTER_SITE, EMBED_LOOKUPS_FILE, bandcampPageKey } from './schema.mjs';
 import { ensureImageVariants, readImageManifest } from './images.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -86,6 +86,15 @@ function subtitle(key, indent = '    ') {
     return text ? `\n${indent}<p class="section-subtitle">${escapeHtml(text)}</p>` : '';
 }
 
+// Bandcamp page link -> { type, id }, looked up by the admin API when saved
+// (see schema.mjs). Read fresh at the top of build().
+let EMBED_LOOKUPS = {};
+
+function bandcampPlayer(type, id) {
+    const linkcol = ACCENT_COLOR.replace('#', '');
+    return { kind: 'bandcamp', label: 'Bandcamp player', src: `https://bandcamp.com/EmbeddedPlayer/${type}=${id}/size=large/bgcol=ffffff/linkcol=${linkcol}/tracklist=false/artwork=small/transparent=true/` };
+}
+
 // Embedded players for the media hosts that allow it. Returns the player's
 // address and shape for a pasted link, or null for anything else (which the
 // build then skips). YouTube uses its no-cookie domain so visitors aren't
@@ -145,6 +154,18 @@ function embedFor(rawUrl) {
         return { kind: type === 'track' || type === 'episode' ? 'spotify' : 'spotify-tall', label: 'Spotify player', src: `https://open.spotify.com/embed/${type}/${id}` };
     }
 
+    // Bandcamp's own embed link (from its Share/Embed button) carries the number...
+    if (host === 'bandcamp.com' && parts[0] === 'EmbeddedPlayer') {
+        const match = url.pathname.match(/\b(album|track)=(\d+)/);
+        return match ? bandcampPlayer(match[1], match[2]) : null;
+    }
+    // ...an ordinary album/track page link needs the saved lookup.
+    const bandcampKey = bandcampPageKey(url.href);
+    if (bandcampKey) {
+        const found = EMBED_LOOKUPS[bandcampKey];
+        return found ? bandcampPlayer(found.type, found.id) : null;
+    }
+
     return null;
 }
 
@@ -158,13 +179,15 @@ function youtubeStart(value) {
 }
 
 function mediaEmbeds(urls, title) {
+    const seen = new Set();
     const players = (urls || [])
         .map(url => {
             const embed = embedFor(url);
             if (!embed && String(url ?? '').trim()) console.warn(`Skipping embed for "${title}" -- not a supported link: ${url}`);
             return embed;
         })
-        .filter(Boolean)
+        // The same video in both Link and Embedded media only plays once.
+        .filter(embed => embed && !seen.has(embed.src) && seen.add(embed.src))
         .map(
             ({ kind, label, src }) =>
                 `      <div class="media-embed media-embed--${kind}"><iframe src="${escapeHtml(src)}" title="${escapeHtml(`${title} — ${label}`)}" loading="lazy" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
@@ -451,9 +474,14 @@ function itemPage(item) {
     // hosted (Vimeo, YouTube, an article, etc.) -- client: "the ones that
     // are online can be linked." Only rendered when set; nothing changes
     // for items that don't have one yet.
-    const linkHtml = item.link
+    // A link to something playable (YouTube, Vimeo, SoundCloud, Spotify,
+    // Bandcamp) becomes the player itself instead -- the player carries its
+    // own link back to the host. Other links stay "View online".
+    const linkPlays = Boolean(item.link && embedFor(item.link));
+    const linkHtml = item.link && !linkPlays
         ? `\n    <p class="project-link"><a class="placeholder" href="${escapeHtml(item.link)}"${externalAttrs(item.link)}>View online →</a></p>`
         : '';
+    const playerUrls = [...(linkPlays ? [item.link] : []), ...(item.embeds || [])];
 
     const navLinks = [`<a href="${section.backHref}">← ${escapeHtml(section.backLabel)}</a>`];
     if (item.prev) navLinks.push(`<a href="${item.prev.slug}.html">← ${escapeHtml(item.prev.title)}</a>`);
@@ -474,7 +502,7 @@ function itemPage(item) {
     ${figure}
     <div class="project-copy">
 ${projectParagraphs(item.copy)}
-    </div>${mediaEmbeds(item.embeds, item.title)}${linkHtml}
+    </div>${mediaEmbeds(playerUrls, item.title)}${linkHtml}
 ${detailList(item.details)}${crossHtml}
     <nav class="project-navigation" aria-label="Project navigation">
         ${navLinks.join('\n        ')}
@@ -625,6 +653,12 @@ function build() {
     } catch {
         subtitleEntries = [];
     }
+    try {
+        EMBED_LOOKUPS = JSON.parse(fs.readFileSync(path.join(ROOT, EMBED_LOOKUPS_FILE), 'utf8'));
+    } catch {
+        EMBED_LOOKUPS = {};
+    }
+
     SUBTITLES = Object.fromEntries(subtitleEntries.filter(s => s.show && String(s.text || '').trim()).map(s => [s.key, s.text.trim()]));
 
     IMAGE_MANIFEST = readImageManifest(ROOT);

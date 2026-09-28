@@ -51,6 +51,26 @@ export const DEFAULT_ACCENT_COLOR = '#a22106';
 // CMS's "Site Visits" page.
 export const GOATCOUNTER_SITE = 'https://daisynduta.goatcounter.com';
 
+// Bandcamp's player needs the album/track's internal number, which isn't in
+// the link people share. The admin API looks it up when a Bandcamp link is
+// saved and records it in this file; build.mjs reads it (the build itself
+// never goes online). Keyed by bandcampPageKey().
+export const EMBED_LOOKUPS_FILE = 'content/embed-lookups.json';
+
+// A Bandcamp album/track page link reduced to a stable key (no query string
+// or trailing slash), or null if it isn't one.
+export function bandcampPageKey(rawUrl) {
+    let url;
+    try {
+        url = new URL(String(rawUrl ?? '').trim());
+    } catch {
+        return null;
+    }
+    const parts = url.pathname.split('/').filter(Boolean);
+    if (!url.hostname.endsWith('.bandcamp.com') || !['album', 'track'].includes(parts[0]) || !parts[1]) return null;
+    return `https://${url.hostname}/${parts[0]}/${parts[1]}`;
+}
+
 export function isFolderCollection(key) {
     return FOLDER_COLLECTIONS.some(c => c.key === key);
 }
