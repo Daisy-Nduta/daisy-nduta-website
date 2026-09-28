@@ -8,6 +8,8 @@ embeds: []
 details:
   - label: Role
     value: Sound Design & Audio Production
+  - label: 'Director of Production & Team Lead '
+    value: Rogan Anjili
 images:
   - images/uploads/crop-71.jpg
 ---
