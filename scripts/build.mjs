@@ -71,9 +71,8 @@ const TOP_SECTIONS = {
     studio: { page: 'sound.html', breadcrumb: 'Sound → Studio', backHref: 'sound.html#studio', backLabel: 'Sound → Studio', bg: 'sound' },
     curation: { page: 'curation-production.html', breadcrumb: 'Production & Curation', backHref: 'curation-production.html', backLabel: 'Production & Curation', bg: 'curation' },
     cultural: { page: 'cultural-projects.html', breadcrumb: 'Cultural Projects', backHref: 'cultural-projects.html', backLabel: 'Cultural Projects', bg: 'cultural' },
-    // Daisy's own work as an artist. No animation of its own yet, so it
-    // uses the default water-surface background (see script.js).
-    work: { page: 'work.html', breadcrumb: 'Work', backHref: 'work.html', backLabel: 'Work', bg: 'puddles' }
+    // Daisy's own work as an artist -- its own fingerprint animation (script.js).
+    work: { page: 'work.html', breadcrumb: 'Work', backHref: 'work.html', backLabel: 'Work', bg: 'work' }
 };
 
 // Optional one-line subtitles under section headings, edited from the CMS
@@ -769,7 +768,7 @@ ${workCards.map(itemCard).join('\n')}
     write(
         'work.html',
         head('Work — Daisy Nduta', 'Daisy Nduta’s own work as an artist.', 'work.html', homeCardImage('work')) +
-            `<body data-bg="puddles">
+            `<body data-bg="work">
   ${header('work.html')}
   <main class="page">
     <p class="eyebrow">Work</p>

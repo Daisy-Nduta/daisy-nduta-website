@@ -23,7 +23,11 @@
     }
 
     window.addEventListener('resize', resize);
+    // Until the visitor actually points somewhere, the pointer is only the
+    // screen-center default -- the fingerprint ignores it until then.
+    let pointerSeen = false;
     function updatePointer(x, y) {
+        pointerSeen = true;
         pointerX = x / width;
         pointerY = y / height;
     }
@@ -45,7 +49,7 @@
 
     /*
      * Every page picks a mood via <body data-bg="...">. No attribute
-     * (Home, About, Contact) falls back to "puddles". Each mood is a
+     * (Home, About, Contact) falls back to "puddles"; Work is "work". Each mood is a
      * genuinely different animation, not just a re-tuned variant.
      */
     const preset = document.body.dataset.bg || 'puddles';
@@ -296,6 +300,93 @@
         });
     }
 
+    /*
+     * Work (Daisy the Artist): a fingerprint -- nested, slightly irregular
+     * whorl loops around a core, with the odd ridge break the way real
+     * prints have. Near the pointer the ridges bulge away and ripple
+     * outward; the ridge the pointer sits on is traced in the accent color
+     * there. Every point is a pure function of `time` (see AGENTS.md).
+     */
+    const FINGERPRINT_RIDGES = 40;
+
+    function drawFingerprint(time) {
+        const cx = width * .5 + (smoothX - .5) * width * .08;
+        const cy = height * .52 + (smoothY - .5) * height * .08;
+        const mouseX = smoothX * width;
+        const mouseY = smoothY * height;
+        const spacing = Math.hypot(width, height) * .78 / FINGERPRINT_RIDGES;
+        const reach = Math.min(width, height) * .32;
+        const drift = time * .00012;
+
+        // The ridge the pointer is sitting on, for the accent trace.
+        const pointerRidge = Math.round(Math.hypot(mouseX - cx, (mouseY - cy) / 1.25) / spacing) - 1;
+
+        for (let k = 0; k < FINGERPRINT_RIDGES; k += 1) {
+            const base = spacing * (k + 1);
+            const points = Math.min(420, Math.max(48, Math.round(base * .45)));
+            // One or two short breaks per ridge, at fixed spots per ridge.
+            const gapA = (Math.sin(k * 12.9898) * 43758.5453 % 1 + 1) % 1 * Math.PI * 2;
+            const gapB = k % 3 === 0 ? gapA + Math.PI * (.7 + (k % 5) * .1) : null;
+            const inGap = angle => [gapA, gapB].some(gap => {
+                if (gap === null) return false;
+                const diff = Math.abs(((angle - gap + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI);
+                return diff < .09 + 3 / base;
+            });
+
+            const traced = [];
+            context.beginPath();
+            let penDown = false;
+            for (let i = 0; i <= points; i += 1) {
+                const angle = (i / points) * Math.PI * 2;
+                // A whorl: taller than wide, gently lopsided, ridges wobbling
+                // slightly and the whole print breathing over time.
+                const shape = 1 +
+                    .07 * Math.sin(2 * angle + .6 + drift) +
+                    .035 * Math.sin(3 * angle + k * .21 - drift * 1.3);
+                const wobble = 1.8 * Math.sin(angle * 7 + k * 1.3 + time * .0004);
+                const r = base * shape + wobble;
+                let x = cx + Math.cos(angle) * r;
+                let y = cy + Math.sin(angle) * r * 1.25;
+
+                const dx = x - mouseX;
+                const dy = y - mouseY;
+                const distance = Math.hypot(dx, dy) || 1;
+                const influence = pointerSeen ? Math.max(0, 1 - distance / reach) : 0;
+                if (influence > 0) {
+                    const eased = influence * influence;
+                    const push = eased * 26 + Math.sin(distance * .09 - time * .005) * influence * 5;
+                    x += (dx / distance) * push;
+                    y += (dy / distance) * push;
+                    if (k === pointerRidge) traced.push({ x, y, influence, i, gap: inGap(angle) });
+                }
+
+                if (inGap(angle)) {
+                    penDown = false;
+                    continue;
+                }
+                if (!penDown) context.moveTo(x, y);
+                else context.lineTo(x, y);
+                penDown = true;
+            }
+            context.strokeStyle = `${INK} .17)`;
+            context.lineWidth = 1;
+            context.stroke();
+
+            // Accent trace, fading out with distance from the pointer.
+            for (let s = 1; s < traced.length; s += 1) {
+                const a = traced[s - 1];
+                const b = traced[s];
+                if (b.i !== a.i + 1 || a.gap || b.gap) continue;
+                context.beginPath();
+                context.moveTo(a.x, a.y);
+                context.lineTo(b.x, b.y);
+                context.strokeStyle = `${ACCENT} ${(b.influence * .75).toFixed(2)})`;
+                context.lineWidth = 1.5;
+                context.stroke();
+            }
+        }
+    }
+
     function draw(time) {
         context.clearRect(0, 0, width, height);
         smoothX += (pointerX - smoothX) * .035;
@@ -304,6 +395,7 @@
         if (preset === 'sound') drawSound(time);
         else if (preset === 'curation') drawPlanetary();
         else if (preset === 'cultural') drawConstellation();
+        else if (preset === 'work') drawFingerprint(time);
         else drawPuddles(time);
 
         requestAnimationFrame(draw);
