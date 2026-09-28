@@ -653,7 +653,7 @@
   // Custom pages (a plain folder collection, but a simpler field shape --
   // title + order + optional image + body, no card/detail-list/cross-link
   // fields. Each one gets its own nav link, in creation/order sequence,
-  // between Work and About.)
+  // between Daisy the Artist and About.)
   // ---------------------------------------------------------------------
 
   function renderPageEntryForm(key, entry, collection) {

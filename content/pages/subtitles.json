@@ -7,6 +7,6 @@
     { "key": "studio", "heading": "Sound → Studio", "text": "", "show": false },
     { "key": "curation", "heading": "Production & Curation (page)", "text": "", "show": false },
     { "key": "cultural", "heading": "Cultural Projects (page)", "text": "", "show": false },
-    { "key": "work", "heading": "Work — Daisy the Artist (page)", "text": "", "show": false }
+    { "key": "work", "heading": "Daisy the Artist (page)", "text": "", "show": false }
   ]
 }

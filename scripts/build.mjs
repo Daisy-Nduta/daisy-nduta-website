@@ -18,13 +18,13 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
 
 // Recomputed at the top of build() once client-added pages (content/sections/pages/)
-// are known, so it includes them between Work and About. header()
+// are known, so it includes them between Daisy the Artist and About. header()
 // reads this module-level binding, so it must be set before any page is generated.
 let NAV_ITEMS = [
     ['sound.html', 'Sound'],
     ['curation-production.html', 'Production & Curation'],
     ['cultural-projects.html', 'Cultural Projects'],
-    ['work.html', 'Work'],
+    ['work.html', 'Daisy the Artist'],
     ['about.html', 'About'],
     ['contact.html', 'Contact']
 ];
@@ -72,7 +72,7 @@ const TOP_SECTIONS = {
     curation: { page: 'curation-production.html', breadcrumb: 'Production & Curation', backHref: 'curation-production.html', backLabel: 'Production & Curation', bg: 'curation' },
     cultural: { page: 'cultural-projects.html', breadcrumb: 'Cultural Projects', backHref: 'cultural-projects.html', backLabel: 'Cultural Projects', bg: 'cultural' },
     // Daisy's own work as an artist -- its own fingerprint animation (script.js).
-    work: { page: 'work.html', breadcrumb: 'Work', backHref: 'work.html', backLabel: 'Work', bg: 'work' }
+    work: { page: 'work.html', breadcrumb: 'Daisy the Artist', backHref: 'work.html', backLabel: 'Daisy the Artist', bg: 'work' }
 };
 
 // Optional one-line subtitles under section headings, edited from the CMS
@@ -683,7 +683,7 @@ function build() {
         ['sound.html', 'Sound'],
         ['curation-production.html', 'Production & Curation'],
         ['cultural-projects.html', 'Cultural Projects'],
-        ['work.html', 'Work'],
+        ['work.html', 'Daisy the Artist'],
         ...customPages.map(p => [`${p.slug}.html`, p.title]),
         ['about.html', 'About'],
         ['contact.html', 'Contact']
@@ -801,11 +801,10 @@ ${workCards.map(itemCard).join('\n')}
         : '      <p class="copy">Work coming soon.</p>';
     write(
         'work.html',
-        head('Work — Daisy Nduta', 'Daisy Nduta’s own work as an artist.', 'work.html', homeCardImage('work')) +
+        head('Daisy the Artist — Daisy Nduta', 'Daisy Nduta’s own work as an artist.', 'work.html', homeCardImage('work')) +
             `<body data-bg="work">
   ${header('work.html')}
   <main class="page">
-    <p class="eyebrow">Work</p>
     <h1>Daisy the <span class="accent">Artist</span></h1>${subtitle('work')}
     <section class="section" aria-label="Work by Daisy Nduta">
 ${workGrid}
