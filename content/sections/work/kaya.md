@@ -1,6 +1,6 @@
 ---
 title: Kaya
-order: 5
+order: 2
 cardLabel: '2018'
 cardSummary: >
   An audio-visual and immersive performance exploring diverse perspectives on
@@ -8,6 +8,7 @@ cardSummary: >
 
   Creator & Producer: Daisy Nduta. 
 link: ''
+embeds: []
 details:
   - label: Producer
     value: Daisy Nduta
@@ -20,9 +21,5 @@ details:
 images:
   - images/uploads/crop-25.jpg
   - images/uploads/crop-29.jpg
-alsoShowOn: ''
-crossListedLabel: ''
-crossListedHref: ''
-crossListedText: ''
 ---
 “Kaya" means home in Digo (coastal tribe in Kenya). Home is often alluded to as a house which is related but not the same. Kaya gives different perspectives of what home looks like for different people through an audio-visual and a live immersive performance.

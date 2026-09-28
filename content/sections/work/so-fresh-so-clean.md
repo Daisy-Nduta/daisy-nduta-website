@@ -1,9 +1,10 @@
 ---
 title: 'So Fresh So Clean, Triple R Radio'
-order: 2
+order: 3
 cardLabel: 2017–2021
 cardSummary: Recording Engineer. Producer & Host.
 link: 'https://www.rrr.org.au/explore/programs/so-fresh-so-clean'
+embeds: []
 details:
   - label: Role
     value: 'Recording Engineer, Producer & Host'

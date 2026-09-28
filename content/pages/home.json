@@ -31,7 +31,7 @@
       "title": "Work",
       "summary": "Daisy's own work as an artist.",
       "href": "work.html",
-      "image": ""
+      "image": "images/uploads/crop-48.jpg"
     },
     {
       "key": "about",
@@ -40,7 +40,7 @@
       "summary": "A closer look at the work — bio, awards, residencies, and selected clients.",
       "href": "about.html",
       "images": [
-        "images/uploads/crop-7.jpg"
+        "images/uploads/crop-47.jpg"
       ]
     },
     {
@@ -50,7 +50,7 @@
       "summary": "For bookings, collaborations, or a first conversation.",
       "href": "contact.html",
       "images": [
-        "images/uploads/crop-6.jpg"
+        "images/uploads/crop-46.jpg"
       ]
     }
   ]

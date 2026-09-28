@@ -1,10 +1,11 @@
 ---
 title: Wazi Podcast
-order: 2
+order: 4
 cardLabel: 2017– 2022
 cardSummary: Recording & Mix Engineer. Producer & Host.
 link: >-
   https://linktr.ee/wazipodcast?utm_source=linktree_profile_share&ltsid=8f6881d9-299c-405f-8d1e-9eeabbce67cc
+embeds: []
 details:
   - label: Role
     value: 'Recording & Mix Engineer, Producer & Host'

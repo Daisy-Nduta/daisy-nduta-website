@@ -210,27 +210,35 @@
     "height": 563,
     "variants": {}
   },
+  "crop-46.jpg": {
+    "width": 1600,
+    "height": 1200,
+    "variants": {
+      "800": "images/uploads/sized/crop-46-800.jpg",
+      "1400": "images/uploads/sized/crop-46-1400.jpg"
+    }
+  },
+  "crop-47.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-47-800.jpg",
+      "1400": "images/uploads/sized/crop-47-1400.jpg"
+    }
+  },
+  "crop-48.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-48-800.jpg",
+      "1400": "images/uploads/sized/crop-48-1400.jpg"
+    }
+  },
   "crop-5.jpg": {
     "width": 1150,
     "height": 863,
     "variants": {
       "800": "images/uploads/sized/crop-5-800.jpg"
-    }
-  },
-  "crop-6.jpg": {
-    "width": 1600,
-    "height": 1200,
-    "variants": {
-      "800": "images/uploads/sized/crop-6-800.jpg",
-      "1400": "images/uploads/sized/crop-6-1400.jpg"
-    }
-  },
-  "crop-7.jpg": {
-    "width": 1905,
-    "height": 1429,
-    "variants": {
-      "800": "images/uploads/sized/crop-7-800.jpg",
-      "1400": "images/uploads/sized/crop-7-1400.jpg"
     }
   },
   "crop-8.jpg": {
