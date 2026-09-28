@@ -1,9 +1,4 @@
 {
-  "crop-11.jpg": {
-    "width": 800,
-    "height": 600,
-    "variants": {}
-  },
   "crop-12.jpg": {
     "width": 1080,
     "height": 810,
@@ -210,6 +205,11 @@
       "800": "images/uploads/sized/crop-43-800.jpg"
     }
   },
+  "crop-44.jpg": {
+    "width": 750,
+    "height": 563,
+    "variants": {}
+  },
   "crop-5.jpg": {
     "width": 1150,
     "height": 863,
@@ -246,11 +246,6 @@
     "variants": {
       "800": "images/uploads/sized/crop-9-800.jpg"
     }
-  },
-  "in-the-beginning.jpg": {
-    "width": 750,
-    "height": 671,
-    "variants": {}
   },
   "photoroom-20260904-163202-2.jpg": {
     "width": 2000,
