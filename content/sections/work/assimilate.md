@@ -1,6 +1,6 @@
 ---
-title: Assimilate
-order: 1
+title: Assimilate - Melbourne Fringe Festival
+order: 2
 cardLabel: '2019'
 cardSummary: >-
   Multi-disciplinary performance blending movement, soundscapes, and visuals to

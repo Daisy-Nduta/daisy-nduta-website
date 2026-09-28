@@ -1,7 +1,7 @@
 ---
 title: 'So Fresh So Clean, Triple R Radio'
 order: 3
-cardLabel: 2017–2021
+cardLabel: 2020 - 2022
 cardSummary: >-
   I produced and hosted this radio show within the 4 years, highlighting African
   and Black artists across the continent and diaspora. 
