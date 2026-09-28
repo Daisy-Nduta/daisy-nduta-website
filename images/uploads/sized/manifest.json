@@ -203,6 +203,13 @@
       "1400": "images/uploads/sized/crop-42-1400.jpg"
     }
   },
+  "crop-43.jpg": {
+    "width": 1267,
+    "height": 950,
+    "variants": {
+      "800": "images/uploads/sized/crop-43-800.jpg"
+    }
+  },
   "crop-5.jpg": {
     "width": 1150,
     "height": 863,
