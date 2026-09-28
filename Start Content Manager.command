@@ -57,4 +57,21 @@ echo ""
     open "http://localhost:8080/admin/" >/dev/null 2>&1
 ) &
 
-npm run cms
+# Keep everything above this point byte-for-byte unchanged: the update
+# check above can rewrite this very file while it's running, and bash then
+# carries on reading from the same position in the new version.
+#
+# The Content Manager exits with code 75 when a Publish brought in an
+# update to its own code -- relaunch it on the new code (installing any new
+# packages first) instead of closing.
+while true; do
+    npm run cms
+    if [ $? -ne 75 ]; then
+        break
+    fi
+    echo ""
+    echo "Updating the Content Manager..."
+    npm install --no-audit --no-fund >/dev/null 2>&1
+    echo "Restarting..."
+    echo ""
+done
