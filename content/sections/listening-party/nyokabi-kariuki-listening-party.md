@@ -1,9 +1,9 @@
 ---
-title: Peace Places Listening Party - Nyokabi Kariuki
+title: Peace Places - Nyokabi Kariuki
 order: 4
 cardLabel: Event Producer
 cardSummary: 'Artist: Nyokabi Kariuki '
-link: ''
+link: 'https://nyokabikariuki.bandcamp.com/album/peace-places-kenyan-memories'
 embeds: []
 details:
   - label: Role
