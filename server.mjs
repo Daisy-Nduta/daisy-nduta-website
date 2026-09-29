@@ -118,25 +118,27 @@ app.post('/api/publish', async (req, res) => {
     // content alone means an ordinary rebuild.
     pulling = true;
     const before = (await git(['rev-parse', 'HEAD'])).stdout.trim();
-    const pull = await git(['pull', '--no-rebase', '--no-edit']);
+    // scripts/sync.mjs rather than a bare `git pull`: it also settles the
+    // conflicts a person would settle in seconds (generated pages, and
+    // content files where each side changed different fields), then
+    // rebuilds from the combined content with the newest code on disk.
+    const pull = await new Promise(resolve => {
+        execFile(process.execPath, [path.join(ROOT, 'scripts', 'sync.mjs')], { cwd: ROOT }, (error, stdout, stderr) =>
+            resolve({ error, output: `${stdout}${stderr}`.trim() })
+        );
+    });
 
     if (pull.error) {
-        // Most likely a genuine merge conflict (the same line of
-        // the same file changed both here and elsewhere) -- abort
-        // any half-finished merge so the working tree is left
-        // clean rather than stuck, and surface a plain-language
-        // message instead of the raw git wall of text. The
-        // ignored result here is deliberate: if there was no
-        // merge in progress to abort, that failure is expected
-        // and irrelevant -- we still report the original pull
-        // failure either way.
-        await git(['merge', '--abort']);
+        // sync.mjs has already backed out any half-finished merge, so
+        // this copy is exactly as it was, local commit included.
         finishPull(false);
         return res.status(500).json({
             success: false,
             step: 'pull',
-            output: pull.stderr || pull.error.message,
-            hint: "Your edit is safely saved on this Mac, but it couldn't be combined automatically with something published elsewhere. Contact your developer to finish publishing this one."
+            output: pull.output || pull.error.message,
+            hint: pull.error.code === 2
+                ? "Your edit is safely saved on this Mac, but it changed the same thing as something published elsewhere, so it needs a person to choose. Contact your developer to finish publishing this one."
+                : "Your edit is safely saved on this Mac, but it couldn't be combined with what's on GitHub right now (are you online?). Try Publish again in a moment; if it keeps failing, contact your developer."
         });
     }
 
@@ -156,7 +158,7 @@ app.post('/api/publish', async (req, res) => {
     } else {
         res.json({
             success: true,
-            output: [nothingToCommit ? 'Nothing new to commit.' : commit.stdout, pull.stdout, push.stdout || push.stderr].filter(Boolean).join('\n'),
+            output: [nothingToCommit ? 'Nothing new to commit.' : commit.stdout, pull.output, push.stdout || push.stderr].filter(Boolean).join('\n'),
             restarting
         });
     }

@@ -61,6 +61,18 @@ echo ""
 # check above can rewrite this very file while it's running, and bash then
 # carries on reading from the same position in the new version.
 #
+# If the plain update check above couldn't combine this Mac's copy with
+# GitHub (e.g. both sides edited neighbouring lines), try again with
+# scripts/sync.mjs, which settles the conflicts a person would settle in
+# seconds. It never loses anything: on a real conflict it backs out and
+# the Content Manager starts with what's already here.
+behind="$(git rev-list --count 'HEAD..@{u}' 2>/dev/null)"
+if [ -n "$behind" ] && [ "$behind" != "0" ]; then
+    echo "Combining this Mac's edits with the latest updates..."
+    node scripts/sync.mjs --startup
+    echo ""
+fi
+
 # The Content Manager exits with code 75 when a Publish brought in an
 # update to its own code -- relaunch it on the new code (installing any new
 # packages first) instead of closing.
