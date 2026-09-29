@@ -229,6 +229,23 @@
     document.getElementById('publish-btn').addEventListener('click', handlePublish);
   }
 
+  // After a Publish that brought in a Content Manager update, the server
+  // restarts itself (server.mjs). Wait for it to go away and come back
+  // before reloading, so the page picks up the new version.
+  // Resolves true once it's back, or false if it hasn't returned after about
+  // a minute (e.g. the launcher window was started before it was updated
+  // and can't relaunch it -- see server.mjs).
+  async function waitForRestart() {
+    const up = () => fetch('/api/git-status', { cache: 'no-store' }).then(r => r.ok, () => false);
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    for (let i = 0; i < 20 && (await up()); i += 1) await sleep(250);
+    for (let i = 0; i < 120; i += 1) {
+      if (await up()) return true;
+      await sleep(500);
+    }
+    return false;
+  }
+
   async function handlePublish() {
     const btn = document.getElementById('publish-btn');
     btn.disabled = true;
@@ -237,9 +254,17 @@
       const res = await fetch('/api/publish', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        toast('Published to GitHub.', 'ok');
+        toast(data.restarting ? 'Published. The Content Manager is updating itself — this page will reload in a moment.' : 'Published to GitHub.', 'ok');
       } else {
         toast(`Publish failed (${data.step}): ${data.output || ''} ${data.hint || ''}`, 'error');
+      }
+      if (data.restarting) {
+        if (await waitForRestart()) {
+          location.reload();
+        } else {
+          toast('The Content Manager needs reopening to finish updating: close its Terminal window, then double-click Start Content Manager.', 'error');
+        }
+        return;
       }
     } catch (error) {
       toast(`Could not reach the local server: ${error.message}`, 'error');
@@ -653,7 +678,7 @@
   // Custom pages (a plain folder collection, but a simpler field shape --
   // title + order + optional image + body, no card/detail-list/cross-link
   // fields. Each one gets its own nav link, in creation/order sequence,
-  // between Work and About.)
+  // between Daisy the Artist and About.)
   // ---------------------------------------------------------------------
 
   function renderPageEntryForm(key, entry, collection) {

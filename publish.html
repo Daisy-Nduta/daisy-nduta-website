@@ -112,6 +112,9 @@
           status.className = 'status err';
           status.textContent = 'Something went wrong (' + data.step + '):\n' + data.output + (data.hint ? '\n\n' + data.hint : '');
         }
+        if (data.restarting) {
+          status.textContent += '\n\nThe Content Manager is updating itself to the latest version — give it a few seconds before editing again.';
+        }
       } catch (error) {
         status.className = 'status err';
         status.textContent = 'Could not reach the local server: ' + error.message;

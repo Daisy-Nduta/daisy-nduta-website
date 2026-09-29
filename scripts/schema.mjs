@@ -17,7 +17,7 @@ export const FOLDER_COLLECTIONS = [
     { key: 'studio', label: 'Sound → Studio', shape: 'item' },
     { key: 'curation', label: 'Production & Curation', shape: 'item' },
     { key: 'cultural', label: 'Cultural Projects', shape: 'item' },
-    { key: 'work', label: 'Work (Daisy the Artist)', shape: 'item' },
+    { key: 'work', label: 'Daisy the Artist', shape: 'item' },
     { key: 'pages', label: 'Pages', shape: 'page' }
 ];
 
