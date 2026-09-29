@@ -4,6 +4,7 @@ order: 4
 cardLabel: Event Producer
 cardSummary: 'Artist: Nyokabi Kariuki '
 link: ''
+embeds: []
 details:
   - label: Role
     value: Producer

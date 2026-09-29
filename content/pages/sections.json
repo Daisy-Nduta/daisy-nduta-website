@@ -52,9 +52,21 @@
       "groups": [
         {
           "key": "curation",
-          "title": "Production & Curation",
-          "subtitle": "",
-          "showSubtitle": false
+          "title": "Events",
+          "subtitle": "Curating and producing live music and cultural experiences.",
+          "showSubtitle": true
+        },
+        {
+          "key": "listening-party",
+          "title": "Listening Party",
+          "subtitle": "Producing intimate listening experiences that bring artists, audiences and communities together.",
+          "showSubtitle": true
+        },
+        {
+          "key": "film-video",
+          "title": "Film & Video",
+          "subtitle": "Producing & supporting audio-visual projects across film, animation and music.",
+          "showSubtitle": true
         }
       ]
     },
