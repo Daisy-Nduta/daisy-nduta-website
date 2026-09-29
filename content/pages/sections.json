@@ -83,7 +83,7 @@
       "title": "Daisy the Artist",
       "slug": "work",
       "background": "work",
-      "headline": "",
+      "headline": "Daisy's own creative work — immersive shows, hosting radio and podcasts, and DJ sets.",
       "headlineAccent": "",
       "subtitle": "",
       "showSubtitle": false,
@@ -91,10 +91,22 @@
       "cardImage": "images/uploads/crop-48.jpg",
       "groups": [
         {
+          "key": "djing-radio",
+          "title": "Djing & Radio",
+          "subtitle": "Hosting radio shows, podcasts, and DJ sets — sharing music and stories with an audience.",
+          "showSubtitle": true
+        },
+        {
+          "key": "performing-arts-2",
+          "title": "Performing Arts",
+          "subtitle": "Immersive theatre and performance pieces, shaping both the sound and the overall show.",
+          "showSubtitle": true
+        },
+        {
           "key": "work",
-          "title": "Daisy the Artist",
-          "subtitle": "",
-          "showSubtitle": false
+          "title": "Sound Art",
+          "subtitle": "Experimental audio work made as art in its own right, outside of a show or broadcast.",
+          "showSubtitle": true
         }
       ]
     }

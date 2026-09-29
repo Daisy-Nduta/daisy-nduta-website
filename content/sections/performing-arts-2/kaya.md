@@ -1,6 +1,6 @@
 ---
 title: Kaya
-order: 5
+order: 6
 cardLabel: '2018'
 cardSummary: >
   An audio-visual and immersive performance exploring diverse perspectives on

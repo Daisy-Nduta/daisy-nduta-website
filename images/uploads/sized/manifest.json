@@ -357,6 +357,11 @@
       "1400": "images/uploads/sized/crop-71-1400.jpg"
     }
   },
+  "crop-73.jpg": {
+    "width": 456,
+    "height": 342,
+    "variants": {}
+  },
   "crop-8.jpg": {
     "width": 959,
     "height": 719,

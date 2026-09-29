@@ -14,6 +14,7 @@ details:
     value: '2019'
   - label: Selected
     value: Golden State Film Festival
-images: []
+images:
+  - images/uploads/crop-73.jpg
 ---
 "Next Train from Castlemaine" is a bittersweet and emotional relationship drama about an old, recently widowed man, Ronan, who battles to keep his independence and is forced to make decisions that might change the course of the rest of his life as his daughter, Daisy, is moving him into a nursing home.

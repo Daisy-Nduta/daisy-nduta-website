@@ -1,6 +1,6 @@
 ---
 title: Wazi Podcast
-order: 6
+order: 5
 cardLabel: 2017– 2022
 cardSummary: Created and produced this freeform podcast with rotating guest hosts.
 link: >-
