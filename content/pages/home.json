@@ -2,40 +2,7 @@
   "tagline": "Sound designer, location recordist, and cultural producer working across film, events, artist development, and community-led arts.",
   "cards": [
     {
-      "key": "sound",
-      "label": "01 — Sound",
-      "title": "Sound",
-      "summary": "Sound design, location recording, and audio engineering across film, broadcast, live, and studio work.",
-      "href": "sound.html",
-      "image": "images/uploads/crop-4.jpg"
-    },
-    {
-      "key": "curation",
-      "label": "02 — Production & Curation",
-      "title": "Production & Curation",
-      "summary": "Producing, programming, and curating live experiences — from venue seasons to festival showcases.",
-      "href": "curation-production.html",
-      "image": "images/uploads/crop-5.jpg"
-    },
-    {
-      "key": "cultural",
-      "label": "03 — Cultural Projects",
-      "title": "Cultural Projects",
-      "summary": "Artist development, longer-term collaborations, and community-rooted creative work.",
-      "href": "cultural-projects.html",
-      "image": "images/uploads/ti0a9382.jpg"
-    },
-    {
-      "key": "work",
-      "label": "04 — Daisy the Artist",
-      "title": "Daisy the Artist",
-      "summary": "Daisy's own work as an artist.",
-      "href": "work.html",
-      "image": "images/uploads/crop-48.jpg"
-    },
-    {
       "key": "about",
-      "label": "05 — About",
       "title": "About",
       "summary": "A closer look at the work — bio, awards, residencies, and selected clients.",
       "href": "about.html",
@@ -45,7 +12,6 @@
     },
     {
       "key": "contact",
-      "label": "06 — Contact",
       "title": "Contact",
       "summary": "For bookings, collaborations, or a first conversation.",
       "href": "contact.html",

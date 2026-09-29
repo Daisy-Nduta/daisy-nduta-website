@@ -11,23 +11,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
-import { RESERVED_PAGE_SLUGS, DEFAULT_ACCENT_COLOR, GOATCOUNTER_SITE, EMBED_LOOKUPS_FILE, bandcampPageKey } from './schema.mjs';
+import { CORE_PAGE_SLUGS, BACKGROUNDS, DEFAULT_ACCENT_COLOR, GOATCOUNTER_SITE, EMBED_LOOKUPS_FILE, bandcampPageKey, readSections } from './schema.mjs';
 import { ensureImageVariants, readImageManifest } from './images.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
 
-// Recomputed at the top of build() once client-added pages (content/sections/pages/)
-// are known, so it includes them between Daisy the Artist and About. header()
-// reads this module-level binding, so it must be set before any page is generated.
-let NAV_ITEMS = [
-    ['sound.html', 'Sound'],
-    ['curation-production.html', 'Production & Curation'],
-    ['cultural-projects.html', 'Cultural Projects'],
-    ['work.html', 'Daisy the Artist'],
-    ['about.html', 'About'],
-    ['contact.html', 'Contact']
-];
+// [href, label] for every nav link: the sections (in the CMS's Sections
+// order), then client-added Pages, then About and Contact. Computed at the
+// top of build(); header() reads this module-level binding, so it must be
+// set before any page is generated.
+let NAV_ITEMS = [];
 
 // The site's highlight/hover color -- editable from the CMS (Site Settings)
 // via content/pages/settings.json, read fresh at the top of build() below.
@@ -40,7 +34,9 @@ const SITE_URL = 'https://daisynduta.com';
 
 // Resized copies of uploaded photos (scripts/images.mjs), read fresh at the
 // top of build(), plus the fallback link-preview image (the first Home card
-// photo) for pages that have no photo of their own.
+// photo) for pages that have no photo of their own. HOME_CARDS is every Home
+// card in order: one per section (from the Sections file), then home.json's
+// About and Contact cards.
 let IMAGE_MANIFEST = {};
 let DEFAULT_SHARE_IMAGE = '';
 let HOME_CARDS = [];
@@ -63,27 +59,19 @@ const IMAGE_SIZES = {
     portrait: '(max-width: 700px) 100vw, 600px'
 };
 
-// folder key (content/sections/<key>/) -> where it lives on the site
-const TOP_SECTIONS = {
-    film: { page: 'sound.html', breadcrumb: 'Sound → Film', backHref: 'sound.html#film', backLabel: 'Sound → Film', bg: 'sound' },
-    broadcast: { page: 'sound.html', breadcrumb: 'Sound → Broadcast', backHref: 'sound.html#broadcast', backLabel: 'Sound → Broadcast', bg: 'sound' },
-    live: { page: 'sound.html', breadcrumb: 'Sound → Live', backHref: 'sound.html#live', backLabel: 'Sound → Live', bg: 'sound' },
-    studio: { page: 'sound.html', breadcrumb: 'Sound → Studio', backHref: 'sound.html#studio', backLabel: 'Sound → Studio', bg: 'sound' },
-    curation: { page: 'curation-production.html', breadcrumb: 'Production & Curation', backHref: 'curation-production.html', backLabel: 'Production & Curation', bg: 'curation' },
-    cultural: { page: 'cultural-projects.html', breadcrumb: 'Cultural Projects', backHref: 'cultural-projects.html', backLabel: 'Cultural Projects', bg: 'cultural' },
-    // Daisy's own work as an artist -- its own fingerprint animation (script.js).
-    work: { page: 'work.html', breadcrumb: 'Daisy the Artist', backHref: 'work.html', backLabel: 'Daisy the Artist', bg: 'work' }
-};
+// The site's sections, as managed from the CMS (content/pages/sections.json,
+// see schema.mjs), read at the top of build(). TOP_SECTIONS maps each
+// subsection's folder key (content/sections/<key>/) to where its entries
+// live on the site.
+let SECTIONS = [];
+let TOP_SECTIONS = {};
 
-// Optional one-line subtitles under section headings, edited from the CMS
-// (Section Subtitles -> content/pages/subtitles.json). Each one has its own
-// "show" switch, so a subtitle can be drafted without appearing on the site.
-// Holds only the ones switched on; read fresh at the top of build().
-let SUBTITLES = {};
-
-function subtitle(key, indent = '    ') {
-    const text = SUBTITLES[key];
-    return text ? `\n${indent}<p class="section-subtitle">${escapeHtml(text)}</p>` : '';
+// Optional one-line subtitle under a section's or subsection's heading.
+// Each has its own "show" switch in the CMS, so one can be drafted without
+// appearing on the site.
+function subtitle(entry, indent = '    ') {
+    const text = String(entry.subtitle || '').trim();
+    return entry.showSubtitle && text ? `\n${indent}<p class="section-subtitle">${escapeHtml(text)}</p>` : '';
 }
 
 // Bandcamp page link -> { type, id }, looked up by the admin API when saved
@@ -195,12 +183,6 @@ function mediaEmbeds(urls, title) {
     return players.length ? `\n    <div class="media-embeds">\n${players.join('\n')}\n    </div>` : '';
 }
 
-const SOUND_SUBSECTIONS = [
-    ['film', 'Film'],
-    ['broadcast', 'Broadcast'],
-    ['live', 'Live'],
-    ['studio', 'Studio']
-];
 
 // The card "go to" arrow used to be a plain "↗" character. Some mobile
 // browsers substitute an unrelated character (or their own default glyph,
@@ -647,22 +629,39 @@ function build() {
     }
     ACCENT_COLOR = /^#[0-9a-fA-F]{6}$/.test(settings.accentColor || '') ? settings.accentColor : DEFAULT_ACCENT_COLOR;
 
-    let subtitleEntries = [];
-    try {
-        subtitleEntries = readJson('pages/subtitles.json').sections || [];
-    } catch {
-        subtitleEntries = [];
-    }
     try {
         EMBED_LOOKUPS = JSON.parse(fs.readFileSync(path.join(ROOT, EMBED_LOOKUPS_FILE), 'utf8'));
     } catch {
         EMBED_LOOKUPS = {};
     }
 
-    SUBTITLES = Object.fromEntries(subtitleEntries.filter(s => s.show && String(s.text || '').trim()).map(s => [s.key, s.text.trim()]));
-
     IMAGE_MANIFEST = readImageManifest(ROOT);
-    HOME_CARDS = readJson('pages/home.json').cards || [];
+
+    // Sections (validated loosely -- the admin API is what enforces the
+    // rules; this just keeps a hand-edited file from breaking the build).
+    const backgroundKeys = new Set(BACKGROUNDS.map(b => b.key));
+    SECTIONS = readSections()
+        .filter(section => section.key && section.slug && section.title && Array.isArray(section.groups) && section.groups.length)
+        .map(section => ({ ...section, background: backgroundKeys.has(section.background) ? section.background : 'puddles' }));
+    TOP_SECTIONS = {};
+    SECTIONS.forEach(section => {
+        const multi = section.groups.length > 1;
+        section.groups.forEach(group => {
+            const breadcrumb = multi ? `${section.title} → ${group.title}` : section.title;
+            TOP_SECTIONS[group.key] = {
+                page: `${section.slug}.html`,
+                breadcrumb,
+                backHref: multi ? `${section.slug}.html#${group.key}` : `${section.slug}.html`,
+                backLabel: breadcrumb,
+                bg: section.background
+            };
+        });
+    });
+
+    HOME_CARDS = [
+        ...SECTIONS.map(section => ({ key: section.key, title: section.title, summary: section.cardSummary || '', href: `${section.slug}.html`, image: section.cardImage || '' })),
+        ...(readJson('pages/home.json').cards || [])
+    ];
     DEFAULT_SHARE_IMAGE = HOME_CARDS.map(c => homeCardImage(c.key)).find(Boolean) || '';
 
     // Client-added top-level pages (content/sections/pages/) -- a plain
@@ -671,8 +670,9 @@ function build() {
     // admin API already blocks creating one, but hand-edited content could
     // still introduce one, and silently overwriting sound.html etc. would
     // be a much worse failure than just dropping the offending page.
+    const sectionSlugs = new Set(SECTIONS.map(section => section.slug));
     const customPages = readFolder('pages').filter(page => {
-        if (RESERVED_PAGE_SLUGS.has(page.slug)) {
+        if (CORE_PAGE_SLUGS.has(page.slug) || sectionSlugs.has(page.slug)) {
             console.warn(`Skipping custom page "${page.title}" -- slug "${page.slug}" collides with a core page.`);
             return false;
         }
@@ -680,10 +680,7 @@ function build() {
     });
 
     NAV_ITEMS = [
-        ['sound.html', 'Sound'],
-        ['curation-production.html', 'Production & Curation'],
-        ['cultural-projects.html', 'Cultural Projects'],
-        ['work.html', 'Daisy the Artist'],
+        ...SECTIONS.map(section => [`${section.slug}.html`, section.title]),
         ...customPages.map(p => [`${p.slug}.html`, p.title]),
         ['about.html', 'About'],
         ['contact.html', 'Contact']
@@ -715,119 +712,91 @@ function build() {
         allSlugs.push(page.slug);
     });
 
-    cleanupOrphans(allSlugs);
+    // Section pages are tracked too, so deleting a section in the CMS also
+    // removes its page.
+    cleanupOrphans([...allSlugs, ...SECTIONS.map(section => section.slug)]);
 
-    // ---- sound.html ----
-    const soundSections = SOUND_SUBSECTIONS.map(([key, heading]) => {
-        const { cards, note } = gatherCards(allFoldersData, key);
-        return `
-    <section class="section" id="${key}">
-      <h2>${accentFull(heading)}</h2>${subtitle(key, '      ')}
+    // ---- section pages (sound.html etc.) ----
+    // One page per section. A section with several subsections shows each
+    // as a headed group (anchor id = its folder key, e.g. sound.html#film);
+    // with just one, its entries go straight under the page heading. Empty
+    // subsections are left out, and a section with no entries at all says
+    // so. The headline is optional: with one, the section's name is the
+    // small eyebrow above it; without, the name itself is the heading.
+    SECTIONS.forEach(section => {
+        const multi = section.groups.length > 1;
+        const groups = section.groups
+            .map(group => ({ group, ...gatherCards(allFoldersData, group.key) }))
+            .filter(({ cards }) => cards.length);
+
+        let body;
+        if (!groups.length) {
+            body = `
+    <section class="section" aria-label="${escapeHtml(section.title)}">
+      <p class="copy">Coming soon.</p>
+    </section>`;
+        } else if (multi) {
+            body = groups
+                .map(
+                    ({ group, cards, note }) => `
+    <section class="section" id="${group.key}">
+      <h2>${accentFull(group.title)}</h2>${subtitle(group, '      ')}
       <div class="item-grid">
 ${cards.map(itemCard).join('\n')}
       </div>${note}
-    </section>
-`;
-    }).join('');
-
-    write(
-        'sound.html',
-        head('Sound — Daisy Nduta', 'Sound design, location recording, and audio engineering by Daisy Nduta.', 'sound.html', homeCardImage('sound')) +
-            `<body data-bg="sound">
-  ${header('sound.html')}
-  <main class="page">
-    <p class="eyebrow">Sound</p>
-    <h1 class="hero-lede"><span class="accent">Sound design</span>, location recording, and audio engineering across film, broadcast, live, and studio work.</h1>${subtitle('sound')}
-${soundSections}
-    ${FOOTER}
-  </main>
-</body>
-</html>
-`
-    );
-
-    // ---- curation-production.html ----
-    const { cards: curationCards } = gatherCards(allFoldersData, 'curation');
-    write(
-        'curation-production.html',
-        head('Production & Curation — Daisy Nduta', 'Production and curation work by Daisy Nduta.', 'curation-production.html', homeCardImage('curation')) +
-            `<body data-bg="curation">
-  ${header('curation-production.html')}
-  <main class="page">
-    <p class="eyebrow">Production &amp; Curation</p>
-    <h1 class="hero-lede">Producing, programming, and curating <span class="accent">live experiences</span> — from venue seasons to festival showcases.</h1>${subtitle('curation')}
-    <section class="section" aria-label="Production and curation credits">
+    </section>`
+                )
+                .join('\n');
+        } else {
+            const { cards, note } = groups[0];
+            body = `
+    <section class="section" aria-label="${escapeHtml(`${section.title} credits`)}">
       <div class="item-grid">
-${curationCards.map(itemCard).join('\n')}
-      </div>
-    </section>
-    ${FOOTER}
-  </main>
-</body>
-</html>
-`
-    );
+${cards.map(itemCard).join('\n')}
+      </div>${note}
+    </section>`;
+        }
 
-    // ---- cultural-projects.html ----
-    const { cards: culturalCards } = gatherCards(allFoldersData, 'cultural');
-    write(
-        'cultural-projects.html',
-        head('Cultural Projects — Daisy Nduta', 'Longer-term, multidisciplinary, and community-rooted work by Daisy Nduta.', 'cultural-projects.html', homeCardImage('cultural')) +
-            `<body data-bg="cultural">
-  ${header('cultural-projects.html')}
-  <main class="page">
-    <p class="eyebrow">Cultural Projects</p>
-    <h1 class="hero-lede">Longer-term, multidisciplinary, and <span class="accent">community-rooted</span> work.</h1>${subtitle('cultural')}
-    <section class="section" aria-label="Cultural project credits">
-      <div class="item-grid">
-${culturalCards.map(itemCard).join('\n')}
-      </div>
-    </section>
-    ${FOOTER}
-  </main>
-</body>
-</html>
-`
-    );
+        const headline = String(section.headline || '').trim();
+        const hero = headline
+            ? `<p class="eyebrow">${escapeHtml(section.title)}</p>
+    <h1 class="hero-lede">${applyAccents(headline, section.headlineAccent ? [section.headlineAccent] : [])}</h1>`
+            : `<h1>${accentLastWord(section.title)}</h1>`;
 
-    // ---- work.html ----
-    // Daisy's own work as an artist, kept apart from the projects she
-    // produces for or with others.
-    const { cards: workCards } = gatherCards(allFoldersData, 'work');
-    const workGrid = workCards.length
-        ? `      <div class="item-grid">
-${workCards.map(itemCard).join('\n')}
-      </div>`
-        : '      <p class="copy">Work coming soon.</p>';
-    write(
-        'work.html',
-        head('Daisy the Artist — Daisy Nduta', 'Daisy Nduta’s own work as an artist.', 'work.html', homeCardImage('work')) +
-            `<body data-bg="work">
-  ${header('work.html')}
+        write(
+            `${section.slug}.html`,
+            head(
+                `${section.title} — Daisy Nduta`,
+                describe(headline || (section.showSubtitle && section.subtitle) || section.cardSummary, `${section.title} — Daisy Nduta.`),
+                `${section.slug}.html`,
+                homeCardImage(section.key)
+            ) +
+                `<body data-bg="${section.background}">
+  ${header(`${section.slug}.html`)}
   <main class="page">
-    <h1>Daisy the <span class="accent">Artist</span></h1>${subtitle('work')}
-    <section class="section" aria-label="Work by Daisy Nduta">
-${workGrid}
-    </section>
+    ${hero}${subtitle(section)}
+${body}
     ${FOOTER}
   </main>
 </body>
 </html>
 `
-    );
+        );
+    });
 
     // ---- index.html ----
-    // The 5 entry cards auto-rotate through a single focal position, rather
+    // The entry cards (one per section, then About and Contact, numbered in
+    // that order) auto-rotate through a single focal position, rather
     // than sitting in a static grid -- client-requested, referencing another
     // site's 3D card carousel but scoped down to a flat rotation using this
     // site's existing card markup/visual system (see AGENTS.md).
     const home = readJson('pages/home.json');
-    const entryCards = home.cards
+    const entryCards = HOME_CARDS
         .map(
             (card, i) => `        <a class="entry-card" href="${card.href}" data-index="${i}">
         ${entryCardMedia(card)}
         <div class="entry-card__body">
-          <p class="label">${escapeHtml(card.label)}</p>
+          <p class="label">${String(i + 1).padStart(2, '0')} — ${escapeHtml(card.title)}</p>
           <h2>${accentLastWord(card.title)}</h2>
           <p>${escapeHtml(card.summary)}</p>
         </div>
@@ -836,7 +805,7 @@ ${workGrid}
         )
         .join('\n');
 
-    const entryDots = home.cards
+    const entryDots = HOME_CARDS
         .map((card, i) => `        <button type="button" class="entry-carousel__dot" data-index="${i}" aria-label="Show ${escapeHtml(card.title)}"></button>`)
         .join('\n');
 
@@ -989,7 +958,7 @@ ${contactRows}
     // Every public page, so search engines can find each project directly.
     // admin/ and publish.html are the local Content Manager's own pages --
     // useless on the live site, so crawlers are asked to skip them.
-    const sitemapPages = ['', 'sound.html', 'curation-production.html', 'cultural-projects.html', 'work.html', 'about.html', 'contact.html', ...allSlugs.map(slug => `${slug}.html`)];
+    const sitemapPages = ['', ...SECTIONS.map(section => `${section.slug}.html`), 'about.html', 'contact.html', ...allSlugs.map(slug => `${slug}.html`)];
     write(
         'sitemap.xml',
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -1008,7 +977,7 @@ Sitemap: ${SITE_URL}/sitemap.xml
 `
     );
 
-    console.log(`Built ${itemCount} item pages + ${customPages.length} custom page(s) + 7 core pages.`);
+    console.log(`Built ${itemCount} item pages + ${customPages.length} custom page(s) + ${SECTIONS.length} section page(s) + 3 core pages.`);
 }
 
 export { build };

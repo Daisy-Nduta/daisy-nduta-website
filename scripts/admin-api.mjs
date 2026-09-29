@@ -12,7 +12,7 @@ import express from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
 import matter from 'gray-matter';
-import { FOLDER_COLLECTIONS, FILE_COLLECTIONS, CROSS_LINK_COLLECTIONS, RESERVED_PAGE_SLUGS, GOATCOUNTER_SITE, EMBED_LOOKUPS_FILE, bandcampPageKey, isFolderCollection, isFileCollection } from './schema.mjs';
+import { folderCollections, FILE_COLLECTIONS, CROSS_LINK_COLLECTIONS, CORE_PAGE_SLUGS, BACKGROUNDS, SECTIONS_FILE, readSections, takenPageSlugs, GOATCOUNTER_SITE, EMBED_LOOKUPS_FILE, bandcampPageKey, isFolderCollection, isFileCollection } from './schema.mjs';
 
 // Uploaded photos get resized/re-encoded before they ever touch disk --
 // portfolio photos routinely come out of a phone/camera at several MB and
@@ -42,11 +42,13 @@ export function createAdminApi(ROOT) {
             .replace(/^-+|-+$/g, '') || 'entry';
     }
 
-    function uniqueSlug(key, base) {
-        const dir = folderPath(key);
+    // A new entry's slug is also its page's filename, so it must be free
+    // site-wide -- not just in its own folder -- or its page would overwrite
+    // another entry's, a section's, or a fixed page.
+    function uniqueSlug(base, taken = takenPageSlugs()) {
         let slug = base;
         let n = 2;
-        while (fs.existsSync(path.join(dir, `${slug}.md`))) {
+        while (taken.has(slug)) {
             slug = `${base}-${n}`;
             n += 1;
         }
@@ -109,13 +111,13 @@ export function createAdminApi(ROOT) {
     // ---- collections ----
 
     router.get('/collections', (req, res) => {
-        const folders = FOLDER_COLLECTIONS.map(c => {
+        const folders = folderCollections().map(c => {
             const dir = folderPath(c.key);
             const count = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.md')).length : 0;
             return { ...c, kind: 'folder', count, crossLink: CROSS_LINK_COLLECTIONS.includes(c.key) };
         });
         const files = FILE_COLLECTIONS.map(c => ({ key: c.key, label: c.label, kind: 'file' }));
-        res.json({ collections: [...files, ...folders] });
+        res.json({ collections: [{ key: 'sections', label: 'Sections', kind: 'sections' }, ...files, ...folders] });
     });
 
     router.get('/collections/:key/entries', (req, res) => {
@@ -147,13 +149,10 @@ export function createAdminApi(ROOT) {
         const fields = req.body || {};
         if (!fields.title || !fields.title.trim()) return res.status(400).json({ error: 'Title is required' });
 
-        const collectionMeta = FOLDER_COLLECTIONS.find(c => c.key === key);
-        const slug = uniqueSlug(key, slugify(fields.title));
+        const collectionMeta = folderCollections().find(c => c.key === key);
+        const slug = uniqueSlug(slugify(fields.title));
 
         if (collectionMeta.shape === 'page') {
-            if (RESERVED_PAGE_SLUGS.has(slug)) {
-                return res.status(400).json({ error: `"${fields.title}" collides with one of the site's core pages -- choose a different title.` });
-            }
             writeEntry(key, slug, {
                 title: fields.title,
                 order: fields.order ?? 99,
@@ -191,7 +190,7 @@ export function createAdminApi(ROOT) {
         if (!isFolderCollection(key)) return res.status(404).json({ error: 'Unknown collection' });
         if (!fs.existsSync(path.join(folderPath(key), `${slug}.md`))) return res.status(404).json({ error: 'Entry not found' });
 
-        const collectionMeta = FOLDER_COLLECTIONS.find(c => c.key === key);
+        const collectionMeta = folderCollections().find(c => c.key === key);
         if (collectionMeta.shape === 'page') {
             const fields = req.body || {};
             writeEntry(key, slug, {
@@ -215,7 +214,7 @@ export function createAdminApi(ROOT) {
     router.post('/collections/:key/entries/:slug/move', (req, res) => {
         const { key, slug } = req.params;
         const to = (req.body || {}).to;
-        const isItem = k => FOLDER_COLLECTIONS.some(c => c.key === k && c.shape === 'item');
+        const isItem = k => folderCollections().some(c => c.key === k && c.shape === 'item');
         if (!isItem(key) || !isItem(to)) return res.status(400).json({ error: 'Entries can only be moved between project sections.' });
         if (to === key) return res.json({ slug });
         const entry = readEntry(key, slug);
@@ -244,6 +243,105 @@ export function createAdminApi(ROOT) {
         if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Entry not found' });
         fs.unlinkSync(filePath);
         res.json({ ok: true });
+    });
+
+    // ---- sections ----
+    // The site's sections and their subsections (see schema.mjs), edited
+    // as a whole from the CMS's Sections page. Returned with how many
+    // entries each subsection holds, since only empty ones can be deleted.
+
+    function countEntries(key) {
+        const dir = folderPath(key);
+        return fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.md')).length : 0;
+    }
+
+    router.get('/sections', (req, res) => {
+        const sections = readSections();
+        const counts = Object.fromEntries(sections.flatMap(s => s.groups.map(g => [g.key, countEntries(g.key)])));
+        res.json({ sections, counts, backgrounds: BACKGROUNDS });
+    });
+
+    // Takes the whole list as edited. New sections/subsections come without
+    // a key (and new sections without a slug); they get fixed ones here. An
+    // existing section keeps its slug whatever the edit says, so renaming
+    // never changes its address. Refuses to drop a subsection that still
+    // holds entries -- they'd vanish from the site.
+    router.put('/sections', (req, res) => {
+        const incoming = Array.isArray((req.body || {}).sections) ? req.body.sections : null;
+        if (!incoming || !incoming.length) return res.status(400).json({ error: 'The site needs at least one section.' });
+
+        const current = readSections();
+        const currentByKey = new Map(current.map(s => [s.key, s]));
+        const backgroundKeys = new Set(BACKGROUNDS.map(b => b.key));
+        const text = value => String(value ?? '').trim();
+
+        // Keys and slugs already spoken for. Section keys (also the Home
+        // cards' keys, alongside About/Contact) and subsection keys (each a
+        // folder under content/sections/, alongside the Pages folder) are
+        // separate namespaces -- a one-subsection section shares its key
+        // with its subsection, like the original four do.
+        const sectionKeys = new Set(['about', 'contact', ...current.map(s => s.key)]);
+        const groupKeys = new Set(['pages', ...current.flatMap(s => s.groups.map(g => g.key))]);
+        const takenSlugs = takenPageSlugs();
+        const claim = (set, title) => {
+            const key = uniqueSlug(slugify(title), set);
+            set.add(key);
+            return key;
+        };
+
+        let sections;
+        try {
+            sections = incoming.map(s => {
+                const title = text(s.title);
+                if (!title) throw new Error('Every section needs a name.');
+                const existing = currentByKey.get(s.key);
+                const key = existing ? existing.key : claim(sectionKeys, title);
+                const slug = existing ? existing.slug : uniqueSlug(slugify(title), takenSlugs);
+                takenSlugs.add(slug);
+                const groups = (Array.isArray(s.groups) ? s.groups : []).map(g => {
+                    const groupTitle = text(g.title);
+                    if (!groupTitle) throw new Error(`Every subsection in "${title}" needs a name.`);
+                    const known = g.key && current.some(c => c.groups.some(cg => cg.key === g.key));
+                    // A brand-new section's first subsection takes the
+                    // section's own key when that folder name is free.
+                    const fresh = !known && !existing && !groupKeys.has(key) ? (groupKeys.add(key), key) : null;
+                    return {
+                        key: known ? g.key : fresh || claim(groupKeys, groupTitle),
+                        title: groupTitle,
+                        subtitle: text(g.subtitle),
+                        showSubtitle: Boolean(g.showSubtitle)
+                    };
+                });
+                if (!groups.length) throw new Error(`"${title}" needs at least one subsection.`);
+                return {
+                    key,
+                    title,
+                    slug,
+                    background: backgroundKeys.has(s.background) ? s.background : 'puddles',
+                    headline: text(s.headline),
+                    headlineAccent: text(s.headlineAccent),
+                    subtitle: text(s.subtitle),
+                    showSubtitle: Boolean(s.showSubtitle),
+                    cardSummary: text(s.cardSummary),
+                    cardImage: text(s.cardImage),
+                    groups
+                };
+            });
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        const keptGroups = new Set(sections.flatMap(s => s.groups.map(g => g.key)));
+        const dropped = current.flatMap(s => s.groups.map(g => ({ section: s, group: g }))).filter(({ group }) => !keptGroups.has(group.key));
+        const nonEmpty = dropped.filter(({ group }) => countEntries(group.key) > 0);
+        if (nonEmpty.length) {
+            const names = nonEmpty.map(({ section, group }) => `"${section.groups.length > 1 ? `${section.title} → ${group.title}` : section.title}" (${countEntries(group.key)} ${countEntries(group.key) === 1 ? 'entry' : 'entries'})`);
+            return res.status(400).json({ error: `Move the entries out first -- these still have some: ${names.join(', ')}.` });
+        }
+
+        fs.writeFileSync(path.join(ROOT, SECTIONS_FILE), JSON.stringify({ sections }, null, 2) + '\n');
+        dropped.forEach(({ group }) => fs.rmSync(folderPath(group.key), { recursive: true, force: true }));
+        res.json({ ok: true, sections });
     });
 
     // ---- singleton pages ----

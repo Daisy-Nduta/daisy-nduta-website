@@ -1,0 +1,102 @@
+{
+  "sections": [
+    {
+      "key": "sound",
+      "title": "Sound",
+      "slug": "sound",
+      "background": "sound",
+      "headline": "Sound design, location recording, and audio engineering across film, broadcast, live, and studio work.",
+      "headlineAccent": "Sound design",
+      "subtitle": "",
+      "showSubtitle": false,
+      "cardSummary": "Sound design, location recording, and audio engineering across film, broadcast, live, and studio work.",
+      "cardImage": "images/uploads/crop-4.jpg",
+      "groups": [
+        {
+          "key": "film",
+          "title": "Film",
+          "subtitle": "Location sound recording and post-production sound design for film and visual projects.",
+          "showSubtitle": true
+        },
+        {
+          "key": "broadcast",
+          "title": "Broadcast",
+          "subtitle": "",
+          "showSubtitle": false
+        },
+        {
+          "key": "live",
+          "title": "Live",
+          "subtitle": "Live sound engineering and recording for artists, showcases, and performances.",
+          "showSubtitle": true
+        },
+        {
+          "key": "studio",
+          "title": "Studio",
+          "subtitle": "Album mixing, shaping individual tracks into a cohesive and polished body of work.",
+          "showSubtitle": true
+        }
+      ]
+    },
+    {
+      "key": "curation",
+      "title": "Production & Curation",
+      "slug": "curation-production",
+      "background": "curation",
+      "headline": "Producing, programming, and curating live experiences — from venue seasons to festival showcases.",
+      "headlineAccent": "live experiences",
+      "subtitle": "",
+      "showSubtitle": false,
+      "cardSummary": "Producing, programming, and curating live experiences — from venue seasons to festival showcases.",
+      "cardImage": "images/uploads/crop-5.jpg",
+      "groups": [
+        {
+          "key": "curation",
+          "title": "Production & Curation",
+          "subtitle": "",
+          "showSubtitle": false
+        }
+      ]
+    },
+    {
+      "key": "cultural",
+      "title": "Cultural Projects",
+      "slug": "cultural-projects",
+      "background": "cultural",
+      "headline": "Longer-term, multidisciplinary, and community-rooted work.",
+      "headlineAccent": "community-rooted",
+      "subtitle": "",
+      "showSubtitle": false,
+      "cardSummary": "Artist development, longer-term collaborations, and community-rooted creative work.",
+      "cardImage": "images/uploads/ti0a9382.jpg",
+      "groups": [
+        {
+          "key": "cultural",
+          "title": "Cultural Projects",
+          "subtitle": "",
+          "showSubtitle": false
+        }
+      ]
+    },
+    {
+      "key": "work",
+      "title": "Daisy the Artist",
+      "slug": "work",
+      "background": "work",
+      "headline": "",
+      "headlineAccent": "",
+      "subtitle": "",
+      "showSubtitle": false,
+      "cardSummary": "Daisy's own work as an artist.",
+      "cardImage": "images/uploads/crop-48.jpg",
+      "groups": [
+        {
+          "key": "work",
+          "title": "Daisy the Artist",
+          "subtitle": "",
+          "showSubtitle": false
+        }
+      ]
+    }
+  ]
+}

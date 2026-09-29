@@ -297,15 +297,25 @@
   // Sidebar / collections
   // ---------------------------------------------------------------------
 
+  // Called again whenever the sections change (their subsections are
+  // the entry collections listed here), so the click handler is attached
+  // only once.
+  let sidebarWired = false;
+
   async function loadCollections() {
     const { collections } = await api('/collections');
     state.collections = collections;
     const list = document.getElementById('sidebar-list');
-    list.innerHTML = collections
-      .map(c => `<button class="sidebar__item" data-key="${c.key}">${escapeHtml(c.label)}</button>`)
-      .join('') +
+    const item = c => `<button class="sidebar__item" data-key="${c.key}">${escapeHtml(c.label)}</button>`;
+    list.innerHTML =
+      collections.filter(c => c.kind !== 'folder').map(item).join('') +
+      `<div class="sidebar__group-label">Entries</div>` +
+      collections.filter(c => c.kind === 'folder').map(item).join('') +
       `<div class="sidebar__group-label">Insights</div>
       <button class="sidebar__item" data-view="analytics">Site Visits</button>`;
+    if (state.activeKey) setActiveSidebarItem(state.activeKey);
+    if (sidebarWired) return;
+    sidebarWired = true;
     list.addEventListener('click', e => {
       const btn = e.target.closest('[data-key]');
       if (btn) selectCollection(btn.dataset.key);
@@ -327,7 +337,9 @@
     state.activeSlug = null;
     setActiveSidebarItem(key);
 
-    if (collection.kind === 'file') {
+    if (collection.kind === 'sections') {
+      await renderSectionsForm();
+    } else if (collection.kind === 'file') {
       await renderPageEditor(key);
     } else {
       await renderFolderCollection(key, collection);
@@ -764,49 +776,197 @@
     if (key === 'home') renderHomeForm(data);
     else if (key === 'about') renderAboutForm(data);
     else if (key === 'contact') renderContactForm(data);
-    else if (key === 'subtitles') renderSubtitlesForm(data);
     else renderSettingsForm(data);
   }
 
-  // One optional line under each section's heading. Every section has a
-  // box; only the ticked ones appear on the site, so a subtitle can be
-  // written now and switched on later.
-  function renderSubtitlesForm(data) {
-    const slot = document.getElementById('editor-slot');
-    const sections = data.sections || [];
-    slot.innerHTML = `
-      <div class="editor__header"><span class="editor__title">Section Subtitles</span><div class="editor__actions"><button class="btn btn--primary" id="save-btn">Save</button></div></div>
-      <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;">A short line under a section's heading, saying what that section is about. Tick "Show" for the ones you want on the site; unticked ones are kept here but hidden.</p>
-      ${sections
-        .map(
-          (s, i) => `
-      <div class="field subtitle-row" data-index="${i}">
-        <div class="subtitle-row__head">
-          <span class="subtitle-row__name">${escapeHtml(s.heading)}</span>
-          <label class="subtitle-row__show"><input type="checkbox" class="subtitle-show"${s.show ? ' checked' : ''}> Show</label>
-        </div>
-        <input type="text" class="subtitle-text" value="${escapeHtml(s.text)}" placeholder="One line, e.g. what kind of work this is">
-      </div>`
-        )
-        .join('')}
-    `;
+  // ---------------------------------------------------------------------
+  // Sections -- the site's nav pages (Sound, Production & Curation, ...)
+  // and the subsections their entries are grouped into. Edited as a whole
+  // and saved in one go (PUT /api/sections, which assigns keys and page
+  // addresses to new ones and refuses to delete anything that isn't empty).
+  // ---------------------------------------------------------------------
 
-    document.getElementById('save-btn').addEventListener('click', async () => {
-      const rows = slot.querySelectorAll('.subtitle-row');
-      const payload = {
-        sections: sections.map((s, i) => ({
-          ...s,
-          text: rows[i].querySelector('.subtitle-text').value.trim(),
-          show: rows[i].querySelector('.subtitle-show').checked
-        }))
-      };
+  async function renderSectionsForm() {
+    const main = document.getElementById('main');
+    main.innerHTML = '<div class="editor" id="editor-slot"></div>';
+    const slot = document.getElementById('editor-slot');
+    const loaded = await api('/sections');
+    let draft = JSON.parse(JSON.stringify(loaded.sections));
+    let counts = loaded.counts;
+    const backgrounds = loaded.backgrounds;
+
+    const sectionEntries = section => section.groups.reduce((n, g) => n + (counts[g.key] || 0), 0);
+    const val = (s, g, field) => `data-s="${s}"${g === null ? '' : ` data-g="${g}"`} data-field="${field}"`;
+
+    // Copy what's typed into the form back into `draft` before anything
+    // re-renders it (adding, moving or removing rows).
+    function syncFromDom() {
+      slot.querySelectorAll('[data-field]').forEach(input => {
+        const target = input.dataset.g === undefined ? draft[input.dataset.s] : draft[input.dataset.s].groups[input.dataset.g];
+        target[input.dataset.field] = input.type === 'checkbox' ? input.checked : input.value;
+      });
+    }
+
+    function groupRow(section, s, group, g) {
+      const count = counts[group.key] || 0;
+      const multi = section.groups.length > 1;
+      const canDelete = multi && count === 0;
+      const why = !multi ? 'A section needs at least one subsection — delete the whole section instead.' : count ? `Move its ${count} ${count === 1 ? 'entry' : 'entries'} to another section first.` : 'Delete this subsection';
+      return `
+        <div class="group-row">
+          <div class="group-row__main">
+            <input type="text" ${val(s, g, 'title')} value="${escapeHtml(group.title)}" placeholder="Subsection name">
+            <span class="group-row__count">${count} ${count === 1 ? 'entry' : 'entries'}</span>
+            <button type="button" class="icon-btn" data-action="g-up" data-s="${s}" data-g="${g}" title="Move up" ${g === 0 ? 'disabled' : ''}>↑</button>
+            <button type="button" class="icon-btn" data-action="g-down" data-s="${s}" data-g="${g}" title="Move down" ${g === section.groups.length - 1 ? 'disabled' : ''}>↓</button>
+            <button type="button" class="icon-btn icon-btn--danger" data-action="g-del" data-s="${s}" data-g="${g}" title="${escapeHtml(why)}" ${canDelete ? '' : 'disabled'}>×</button>
+          </div>
+          ${
+            multi
+              ? `<div class="group-row__sub">
+            <input type="text" ${val(s, g, 'subtitle')} value="${escapeHtml(group.subtitle || '')}" placeholder="Subtitle under this subsection's heading (optional)">
+            <label class="subtitle-row__show"><input type="checkbox" ${val(s, g, 'showSubtitle')} ${group.showSubtitle ? 'checked' : ''}> Show</label>
+          </div>`
+              : ''
+          }
+        </div>`;
+    }
+
+    function sectionBox(section, s) {
+      const entries = sectionEntries(section);
+      const address = section.slug ? `daisynduta.com/${section.slug}.html` : 'set when you save';
+      return `
+      <div class="section-box">
+        <div class="section-box__head">
+          <span class="section-box__name">${String(s + 1).padStart(2, '0')} — ${escapeHtml(section.title || 'New section')}</span>
+          <div class="section-box__actions">
+            <button type="button" class="icon-btn" data-action="s-up" data-s="${s}" title="Move up (earlier in the nav and on Home)" ${s === 0 ? 'disabled' : ''}>↑</button>
+            <button type="button" class="icon-btn" data-action="s-down" data-s="${s}" title="Move down" ${s === draft.length - 1 ? 'disabled' : ''}>↓</button>
+            <button type="button" class="btn btn--small btn--danger" data-action="s-del" data-s="${s}" ${entries || draft.length === 1 ? 'disabled' : ''} title="${escapeHtml(entries ? `Move its ${entries} ${entries === 1 ? 'entry' : 'entries'} to another section first.` : draft.length === 1 ? 'The site needs at least one section.' : 'Delete this section')}">Delete section</button>
+          </div>
+        </div>
+
+        <div class="field"><label class="field__label">Name (the nav link and page title)</label><input type="text" ${val(s, null, 'title')} value="${escapeHtml(section.title)}"></div>
+        <p class="section-box__address">Page address: ${escapeHtml(address)} <span>— stays the same if you rename it</span></p>
+
+        <div class="field"><label class="field__label">Headline (optional — a sentence shown large at the top; leave blank to show the name large instead)</label><textarea ${val(s, null, 'headline')}>${escapeHtml(section.headline || '')}</textarea></div>
+        <div class="field"><label class="field__label">Highlighted words in the headline (optional — must match the headline exactly)</label><input type="text" ${val(s, null, 'headlineAccent')} value="${escapeHtml(section.headlineAccent || '')}"></div>
+
+        <div class="field">
+          <label class="field__label">Subtitle (optional — one line under the headline)</label>
+          <div class="group-row__sub">
+            <input type="text" ${val(s, null, 'subtitle')} value="${escapeHtml(section.subtitle || '')}">
+            <label class="subtitle-row__show"><input type="checkbox" ${val(s, null, 'showSubtitle')} ${section.showSubtitle ? 'checked' : ''}> Show</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Background animation</label>
+          <select ${val(s, null, 'background')}>
+            ${backgrounds.map(b => `<option value="${b.key}"${b.key === section.background ? ' selected' : ''}>${escapeHtml(b.label)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Home page card — summary</label>
+          <textarea ${val(s, null, 'cardSummary')}>${escapeHtml(section.cardSummary || '')}</textarea>
+        </div>
+        <div class="field">
+          <label class="field__label">Home page card — photo</label>
+          <div class="image-field">
+            <div class="image-field__preview" style="${section.cardImage ? `background-image:url('/${escapeHtml(section.cardImage)}')` : ''}"></div>
+            <div>
+              <button type="button" class="btn btn--small" data-action="img-upload" data-s="${s}">Upload image</button>
+              ${section.cardImage ? `<button type="button" class="btn btn--small" data-action="img-remove" data-s="${s}">Remove image</button>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Subsections — the groups of entries on this page${section.groups.length > 1 ? '' : ' (with just one, its name isn’t shown on the site)'}</label>
+          ${section.groups.map((group, g) => groupRow(section, s, group, g)).join('')}
+          <button type="button" class="btn btn--small" data-action="g-add" data-s="${s}">+ Add subsection</button>
+        </div>
+      </div>`;
+    }
+
+    function render() {
+      slot.innerHTML = `
+        <div class="editor__header"><span class="editor__title">Sections</span><div class="editor__actions"><button class="btn btn--primary" id="save-btn">Save</button></div></div>
+        <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;line-height:1.5;">Each section is a page on the site with its own nav link and Home page card, in this order. Its <strong>subsections</strong> are the groups of entries on that page, like Film and Live on Sound. A section or subsection can only be deleted once it's empty — use an entry's <strong>Move</strong> button to put its entries somewhere else first. Nothing changes on the site until you Save.</p>
+        ${draft.map(sectionBox).join('')}
+        <button type="button" class="btn btn--small" data-action="s-add">+ Add section</button>
+        <input type="file" id="section-image-input" accept="image/*" style="display:none">
+      `;
+      document.getElementById('save-btn').addEventListener('click', save);
+    }
+
+    const move = (list, from, to) => list.splice(to, 0, list.splice(from, 1)[0]);
+    let uploadFor = null;
+
+    slot.addEventListener('click', async e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn || btn.disabled) return;
+      syncFromDom();
+      const s = Number(btn.dataset.s);
+      const g = Number(btn.dataset.g);
+      const action = btn.dataset.action;
+      if (action === 's-up') move(draft, s, s - 1);
+      else if (action === 's-down') move(draft, s, s + 1);
+      else if (action === 's-del') draft.splice(s, 1);
+      else if (action === 's-add') {
+        draft.push({ title: 'New section', background: 'puddles', headline: '', headlineAccent: '', subtitle: '', showSubtitle: false, cardSummary: '', cardImage: '', groups: [{ title: 'New section', subtitle: '', showSubtitle: false }] });
+      } else if (action === 'g-up') move(draft[s].groups, g, g - 1);
+      else if (action === 'g-down') move(draft[s].groups, g, g + 1);
+      else if (action === 'g-del') draft[s].groups.splice(g, 1);
+      else if (action === 'g-add') draft[s].groups.push({ title: 'New subsection', subtitle: '', showSubtitle: false });
+      else if (action === 'img-remove') draft[s].cardImage = '';
+      else if (action === 'img-upload') {
+        uploadFor = s;
+        document.getElementById('section-image-input').click();
+        return;
+      }
+      render();
+    });
+
+    slot.addEventListener('change', async e => {
+      if (e.target.id !== 'section-image-input') return;
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (!file || uploadFor === null) return;
+      const cropped = await openCropModal(file);
+      if (!cropped) return;
+      const formData = new FormData();
+      formData.append('file', cropped, cropped.name || 'crop.jpg');
       try {
-        await api('/pages/subtitles', { method: 'PUT', body: JSON.stringify(payload) });
-        toast('Saved.', 'ok');
+        const res = await fetch('/api/media', { method: 'POST', body: formData });
+        const uploaded = await res.json();
+        if (!res.ok) throw new Error(uploaded.error || 'Upload failed');
+        syncFromDom();
+        draft[uploadFor].cardImage = uploaded.path;
+        render();
+        toast('Image uploaded — Save to keep it.', 'ok');
       } catch (error) {
         toast(error.message, 'error');
       }
     });
+
+    async function save() {
+      syncFromDom();
+      try {
+        const saved = await api('/sections', { method: 'PUT', body: JSON.stringify({ sections: draft }) });
+        const fresh = await api('/sections');
+        draft = JSON.parse(JSON.stringify(saved.sections));
+        counts = fresh.counts;
+        render();
+        await loadCollections();
+        toast('Saved.', 'ok');
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }
+
+    render();
   }
 
   function listFieldHtml(idPrefix, items, columns) {
@@ -884,7 +1044,7 @@
         <input type="text" id="f-tagline" value="${escapeHtml(data.tagline || '')}">
       </div>
 
-      <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;">The ${data.cards.length} large cards on the home page. Order here is left-to-right, top-to-bottom.</p>
+      <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;">The About and Contact cards on the home page. Each section's card (its summary and photo) is edited on the <strong>Sections</strong> page instead. Cards are numbered automatically, sections first.</p>
       ${data.cards
         .map((card, i) => {
           const isGallery = GALLERY_CARD_KEYS.includes(card.key);
@@ -907,10 +1067,8 @@
           <input type="hidden" class="home-image" data-index="${i}" value="${escapeHtml(card.image || '')}">`;
           return `
         <div class="field" style="border:1px solid rgba(32,30,31,.12);border-radius:8px;padding:18px;max-width:640px;">
-          <label class="field__label">Card ${i + 1} — Title</label>
+          <label class="field__label">${escapeHtml(card.key === 'about' ? 'About' : card.key === 'contact' ? 'Contact' : card.title)} card — Title</label>
           <input type="text" class="home-title" value="${escapeHtml(card.title)}" style="margin-bottom:14px;">
-          <label class="field__label">Small label above the title</label>
-          <input type="text" class="home-label" value="${escapeHtml(card.label)}" style="margin-bottom:14px;">
           <label class="field__label">One-line summary</label>
           <textarea class="home-summary" style="margin-bottom:14px;">${escapeHtml(card.summary)}</textarea>
           ${mediaField}
@@ -995,10 +1153,10 @@
 
     document.getElementById('save-btn').addEventListener('click', async () => {
       const titles = document.querySelectorAll('.home-title');
-      const labels = document.querySelectorAll('.home-label');
       const summaries = document.querySelectorAll('.home-summary');
       const cards = data.cards.map((card, i) => {
-        const base = { ...card, title: titles[i].value, label: labels[i].value, summary: summaries[i].value };
+        const base = { ...card, title: titles[i].value, summary: summaries[i].value };
+        delete base.label;
         if (GALLERY_CARD_KEYS.includes(card.key)) {
           delete base.image;
           base.images = cardImages[i];
