@@ -316,3 +316,20 @@ body {
 .icon-btn:hover:not(:disabled) { border-color: #a22106; color: #a22106; }
 .icon-btn--danger:hover:not(:disabled) { border-color: #b23b3b; color: #b23b3b; }
 .icon-btn:disabled, .section-box .btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ---- Reordering entries (sidebar lists + Sections page) ---- */
+.drag-handle { flex: 0 0 auto; display: inline-flex; cursor: grab; color: rgba(32, 30, 31, .45); user-select: none; }
+.is-dragging { opacity: .45; }
+.entry-list__row { display: flex; align-items: center; gap: 4px; border-radius: 6px; }
+.entry-list__row .drag-handle { padding-left: 6px; opacity: 0; transition: opacity .15s; }
+.entry-list__row:hover .drag-handle { opacity: 1; }
+.entry-list__row .entry-list__item { flex: 1; margin-bottom: 0; }
+.entry-list__hint { font-size: 11px; color: rgba(32, 30, 31, .45); padding: 8px 12px 0; margin: 0; }
+
+.group-entries { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(32, 30, 31, .12); }
+.group-entries__list { margin-bottom: 8px; }
+.group-entry { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; background: #fff; }
+.group-entry:hover { background: rgba(32, 30, 31, .04); }
+.group-entry__title { flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.group-entries__note { font-size: 12px; color: rgba(32, 30, 31, .5); margin: 10px 0 0; }
+.icon-btn--small { width: 26px; height: 26px; font-size: 12px; }

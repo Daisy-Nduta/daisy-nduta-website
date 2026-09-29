@@ -36,7 +36,7 @@
     setTimeout(() => el.remove(), 4000);
   }
 
-  function confirmDialog(message) {
+  function confirmDialog(message, confirmLabel = 'Delete') {
     return new Promise(resolve => {
       const overlay = document.createElement('div');
       overlay.className = 'confirm-overlay';
@@ -45,7 +45,7 @@
           <p>${escapeHtml(message)}</p>
           <div class="confirm-box__actions">
             <button class="btn" data-action="cancel">Cancel</button>
-            <button class="btn btn--danger" data-action="confirm">Delete</button>
+            <button class="btn btn--danger" data-action="confirm">${escapeHtml(confirmLabel)}</button>
           </div>
         </div>`;
       overlay.addEventListener('click', e => {
@@ -350,6 +350,67 @@
   // Folder collections (repeatable items)
   // ---------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------
+  // Reordering entries by dragging (sidebar entry lists + Sections page).
+  // Rows can only be dragged within their own list -- moving an entry to
+  // another subsection is the entry form's Move button.
+  // ---------------------------------------------------------------------
+
+  // Drag handle: an inline SVG rather than a symbol character, which some
+  // fonts/platforms render inconsistently (same lesson as the site's card
+  // arrows -- see AGENTS.md).
+  const GRIP_ICON =
+    '<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2.5" cy="2.5" r="1.4"/><circle cx="7.5" cy="2.5" r="1.4"/><circle cx="2.5" cy="7" r="1.4"/><circle cx="7.5" cy="7" r="1.4"/><circle cx="2.5" cy="11.5" r="1.4"/><circle cx="7.5" cy="11.5" r="1.4"/></svg>';
+
+  async function saveEntryOrder(key, slugs) {
+    try {
+      const { entries } = await api(`/collections/${key}/order`, { method: 'POST', body: JSON.stringify({ slugs }) });
+      toast('Order saved.', 'ok');
+      return entries;
+    } catch (error) {
+      toast(error.message, 'error');
+      return null;
+    }
+  }
+
+  // Wires HTML5 drag-and-drop on `container` for rows matching `rowSelector`
+  // (each with data-slug). The dragged row moves live as it's dragged over
+  // others; on drop, onReorder(listEl, slugs) is called if the order changed.
+  function wireDragReorder(container, rowSelector, onReorder) {
+    let dragged = null;
+    let before = '';
+    const slugsOf = list => [...list.children].filter(el => el.matches(rowSelector)).map(el => el.dataset.slug);
+    container.addEventListener('dragstart', e => {
+      const row = e.target.closest && e.target.closest(rowSelector);
+      if (!row) return;
+      dragged = row;
+      before = slugsOf(row.parentElement).join('\n');
+      row.classList.add('is-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', row.dataset.slug);
+    });
+    container.addEventListener('dragover', e => {
+      if (!dragged) return;
+      const over = e.target.closest && e.target.closest(rowSelector);
+      if (!over || over.parentElement !== dragged.parentElement) return;
+      e.preventDefault();
+      if (over === dragged) return;
+      const rect = over.getBoundingClientRect();
+      over.parentElement.insertBefore(dragged, e.clientY > rect.top + rect.height / 2 ? over.nextSibling : over);
+    });
+    container.addEventListener('drop', e => {
+      if (dragged) e.preventDefault();
+    });
+    container.addEventListener('dragend', () => {
+      if (!dragged) return;
+      const list = dragged.parentElement;
+      dragged.classList.remove('is-dragging');
+      dragged = null;
+      const slugs = slugsOf(list);
+      if (slugs.join('\n') !== before) onReorder(list, slugs);
+    });
+  }
+
   async function renderFolderCollection(key, collection) {
     const isPage = collection.shape === 'page';
     const main = document.getElementById('main');
@@ -366,11 +427,23 @@
     state.entries = entries;
     const listEl = document.getElementById('entry-list-items');
     listEl.innerHTML = entries.length
-      ? entries.map(e => `<button class="entry-list__item" data-slug="${escapeHtml(e.slug)}">${escapeHtml(e.title)}</button>`).join('')
+      ? entries
+          .map(
+            e => `<div class="entry-list__row" draggable="true" data-slug="${escapeHtml(e.slug)}"><span class="drag-handle" aria-hidden="true" title="Drag to reorder">${GRIP_ICON}</span><button class="entry-list__item" data-slug="${escapeHtml(e.slug)}">${escapeHtml(e.title)}</button></div>`
+          )
+          .join('') + `<p class="entry-list__hint">Drag to change the order on the site.</p>`
       : `<p style="font-size:13px;color:rgba(32,30,31,.5);padding:0 12px;">${isPage ? 'No pages yet.' : 'No entries yet.'}</p>`;
     listEl.addEventListener('click', e => {
-      const btn = e.target.closest('[data-slug]');
+      const btn = e.target.closest('.entry-list__item');
       if (btn) openEntry(key, btn.dataset.slug, collection);
+    });
+    wireDragReorder(listEl, '.entry-list__row', async (list, slugs) => {
+      const saved = await saveEntryOrder(key, slugs);
+      // Keep the open entry's Order box in step, without reloading the form
+      // (that would throw away anything typed but not yet saved).
+      const orderInput = document.getElementById('f-order');
+      const open = saved && state.activeSlug && saved.find(e => e.slug === state.activeSlug);
+      if (orderInput && open) orderInput.value = open.order;
     });
   }
 
@@ -793,7 +866,10 @@
     const loaded = await api('/sections');
     let draft = JSON.parse(JSON.stringify(loaded.sections));
     let counts = loaded.counts;
+    let entriesByGroup = loaded.entries || {};
     const backgrounds = loaded.backgrounds;
+    // What was last saved, to tell whether leaving the page would lose edits.
+    let savedJson = JSON.stringify(draft);
 
     const sectionEntries = section => section.groups.reduce((n, g) => n + (counts[g.key] || 0), 0);
     const val = (s, g, field) => `data-s="${s}"${g === null ? '' : ` data-g="${g}"`} data-field="${field}"`;
@@ -829,7 +905,35 @@
           </div>`
               : ''
           }
+          ${groupEntriesHtml(group)}
         </div>`;
+    }
+
+    // The subsection's entries, in site order: drag (or ↑/↓) to reorder --
+    // saved straight away, unlike the rest of this page -- plus Edit and
+    // "+ Add entry", which open the usual entry form.
+    function groupEntriesHtml(group) {
+      if (!group.key || !(group.key in entriesByGroup)) {
+        return `<p class="group-entries__note">Save to start adding entries here.</p>`;
+      }
+      const list = entriesByGroup[group.key];
+      const rows = list
+        .map(
+          (e, i) => `
+            <div class="group-entry" draggable="true" data-slug="${escapeHtml(e.slug)}">
+              <span class="drag-handle" aria-hidden="true" title="Drag to reorder">${GRIP_ICON}</span>
+              <span class="group-entry__title">${escapeHtml(e.title)}</span>
+              <button type="button" class="icon-btn icon-btn--small" data-entry-move="-1" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button>
+              <button type="button" class="icon-btn icon-btn--small" data-entry-move="1" title="Move down" ${i === list.length - 1 ? 'disabled' : ''}>↓</button>
+              <button type="button" class="btn btn--small" data-entry-edit>Edit</button>
+            </div>`
+        )
+        .join('');
+      return `
+          <div class="group-entries" data-group="${escapeHtml(group.key)}">
+            <div class="group-entries__list">${rows}</div>
+            <button type="button" class="btn btn--small" data-entry-add>+ Add entry</button>
+          </div>`;
     }
 
     function sectionBox(section, s) {
@@ -893,7 +997,7 @@
     function render() {
       slot.innerHTML = `
         <div class="editor__header"><span class="editor__title">Sections</span><div class="editor__actions"><button class="btn btn--primary" id="save-btn">Save</button></div></div>
-        <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;line-height:1.5;">Each section is a page on the site with its own nav link and Home page card, in this order. Its <strong>subsections</strong> are the groups of entries on that page, like Film and Live on Sound. A section or subsection can only be deleted once it's empty — use an entry's <strong>Move</strong> button to put its entries somewhere else first. Nothing changes on the site until you Save.</p>
+        <p style="font-size:13px;color:rgba(32,30,31,.6);max-width:640px;margin-bottom:24px;line-height:1.5;">Each section is a page on the site with its own nav link and Home page card, in this order. Its <strong>subsections</strong> are the groups of entries on that page, like Film and Live on Sound. A section or subsection can only be deleted once it's empty — use an entry's <strong>Move</strong> button to put its entries somewhere else first. Section changes apply when you Save; dragging entries into a new order saves straight away.</p>
         ${draft.map(sectionBox).join('')}
         <button type="button" class="btn btn--small" data-action="s-add">+ Add section</button>
         <input type="file" id="section-image-input" accept="image/*" style="display:none">
@@ -903,6 +1007,40 @@
 
     const move = (list, from, to) => list.splice(to, 0, list.splice(from, 1)[0]);
     let uploadFor = null;
+
+    // Leaving for the entry form would drop unsaved section edits -- ask.
+    async function leaveTo(groupKey, slug) {
+      syncFromDom();
+      if (JSON.stringify(draft) !== savedJson && !(await confirmDialog('You have unsaved changes on the Sections page. Leave without saving them?', 'Leave without saving'))) return;
+      const collection = state.collections.find(c => c.key === groupKey);
+      if (!collection) return;
+      await selectCollection(groupKey);
+      if (slug) openEntry(groupKey, slug, collection);
+      else renderItemForm(groupKey, null, collection);
+    }
+
+    async function reorderGroup(groupKey, slugs) {
+      const saved = await saveEntryOrder(groupKey, slugs);
+      if (!saved) return;
+      entriesByGroup[groupKey] = saved;
+      syncFromDom();
+      render();
+    }
+
+    slot.addEventListener('click', e => {
+      const btn = e.target.closest('[data-entry-move], [data-entry-edit], [data-entry-add]');
+      if (!btn || btn.disabled) return;
+      const groupKey = btn.closest('.group-entries').dataset.group;
+      if (btn.hasAttribute('data-entry-add')) return leaveTo(groupKey, null);
+      const slug = btn.closest('.group-entry').dataset.slug;
+      if (btn.hasAttribute('data-entry-edit')) return leaveTo(groupKey, slug);
+      const slugs = entriesByGroup[groupKey].map(x => x.slug);
+      const from = slugs.indexOf(slug);
+      move(slugs, from, from + Number(btn.dataset.entryMove));
+      reorderGroup(groupKey, slugs);
+    });
+
+    wireDragReorder(slot, '.group-entry', (list, slugs) => reorderGroup(list.closest('.group-entries').dataset.group, slugs));
 
     slot.addEventListener('click', async e => {
       const btn = e.target.closest('[data-action]');
@@ -957,7 +1095,9 @@
         const saved = await api('/sections', { method: 'PUT', body: JSON.stringify({ sections: draft }) });
         const fresh = await api('/sections');
         draft = JSON.parse(JSON.stringify(saved.sections));
+        savedJson = JSON.stringify(draft);
         counts = fresh.counts;
+        entriesByGroup = fresh.entries || {};
         render();
         await loadCollections();
         toast('Saved.', 'ok');

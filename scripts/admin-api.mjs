@@ -120,19 +120,43 @@ export function createAdminApi(ROOT) {
         res.json({ collections: [{ key: 'sections', label: 'Sections', kind: 'sections' }, ...files, ...folders] });
     });
 
-    router.get('/collections/:key/entries', (req, res) => {
-        const { key } = req.params;
-        if (!isFolderCollection(key)) return res.status(404).json({ error: 'Unknown collection' });
+    // A folder's entries in the order the site shows them. Sorted the way
+    // build.mjs's readFolder() sorts (missing order counts as 0, ties keep
+    // directory order), so the CMS lists match the pages exactly.
+    function listEntries(key) {
         const dir = folderPath(key);
         const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.md')) : [];
-        const entries = files
+        return files
             .map(f => {
                 const slug = f.replace(/\.md$/, '');
                 const entry = readEntry(key, slug);
-                return { slug, title: entry.title || slug, order: entry.order ?? 99 };
+                return { slug, title: entry.title || slug, order: entry.order ?? 0 };
             })
             .sort((a, b) => a.order - b.order);
-        res.json({ entries });
+    }
+
+    router.get('/collections/:key/entries', (req, res) => {
+        const { key } = req.params;
+        if (!isFolderCollection(key)) return res.status(404).json({ error: 'Unknown collection' });
+        res.json({ entries: listEntries(key) });
+    });
+
+    // Saves a new order for a folder's entries (dragged in the CMS): the
+    // full list of slugs, first to last. Rewrites each entry's `order` as
+    // 1, 2, 3... -- only the files whose number actually changes.
+    router.post('/collections/:key/order', (req, res) => {
+        const { key } = req.params;
+        if (!isFolderCollection(key)) return res.status(404).json({ error: 'Unknown collection' });
+        const slugs = Array.isArray((req.body || {}).slugs) ? req.body.slugs : [];
+        const current = listEntries(key).map(e => e.slug);
+        if (slugs.length !== current.length || [...slugs].sort().join('\n') !== [...current].sort().join('\n')) {
+            return res.status(409).json({ error: 'The list changed in the meantime -- reload the page and try again.' });
+        }
+        slugs.forEach((slug, i) => {
+            const entry = readEntry(key, slug);
+            if (entry.order !== i + 1) writeEntry(key, slug, { ...entry, order: i + 1 });
+        });
+        res.json({ entries: listEntries(key) });
     });
 
     router.get('/collections/:key/entries/:slug', (req, res) => {
@@ -258,7 +282,8 @@ export function createAdminApi(ROOT) {
     router.get('/sections', (req, res) => {
         const sections = readSections();
         const counts = Object.fromEntries(sections.flatMap(s => s.groups.map(g => [g.key, countEntries(g.key)])));
-        res.json({ sections, counts, backgrounds: BACKGROUNDS });
+        const entries = Object.fromEntries(sections.flatMap(s => s.groups.map(g => [g.key, listEntries(g.key)])));
+        res.json({ sections, counts, entries, backgrounds: BACKGROUNDS });
     });
 
     // Takes the whole list as edited. New sections/subsections come without
