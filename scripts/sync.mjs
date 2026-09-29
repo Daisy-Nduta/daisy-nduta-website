@@ -23,6 +23,10 @@
  * runs as a separate `node scripts/build.mjs`, so it always uses the
  * newest code on disk, never code an already-running server loaded earlier.
  *
+ * A real conflict in a content file lists every clashing field with both
+ * values. Re-running with --prefer=github or --prefer=mine settles those
+ * fields that way and combines everything else as usual.
+ *
  * Exit codes: 0 done (or nothing to do), 2 real conflict, 3 unpublished
  * edits in the way (startup only), 1 anything else (e.g. offline).
  */
@@ -56,9 +60,23 @@ function same(a, b) {
     return JSON.stringify(a) === JSON.stringify(b);
 }
 
+// When the same field was changed differently on both sides: `--prefer=github`
+// or `--prefer=mine` settles every such field that way (everything else is
+// still combined as usual). Without it, they're listed with both values and
+// nothing changes, so a person can choose.
+const PREFER = (process.argv.find(arg => arg.startsWith('--prefer=')) || '').split('=')[1] || null;
+let clashes = [];
+
+function preview(value) {
+    const text = value === MISSING ? '(removed)' : JSON.stringify(value);
+    return text.length > 90 ? `${text.slice(0, 87)}...` : text;
+}
+
 // Three-way merge of plain data: keep whichever side changed something,
-// descending into objects and equal-length arrays; throw if both sides
-// changed the same value differently.
+// descending into objects and equal-length arrays. A value changed
+// differently on both sides is recorded in `clashes` and settled by PREFER
+// (this Mac's value when there is no preference -- the caller refuses to
+// write anything in that case anyway).
 function merge3(base, ours, theirs, where) {
     if (same(ours, theirs)) return ours;
     if (same(base, ours)) return theirs;
@@ -80,7 +98,8 @@ function merge3(base, ours, theirs, where) {
     if ([base, ours, theirs].every(Array.isArray) && base.length === ours.length && ours.length === theirs.length) {
         return ours.map((_, i) => merge3(base[i], ours[i], theirs[i], `${where}[${i}]`));
     }
-    throw new Error(`both sides changed ${where}`);
+    clashes.push(`${where.replace(/^[.\s]+/, '') || '(whole file)'} -- this Mac: ${preview(ours)} · GitHub: ${preview(theirs)}`);
+    return PREFER === 'github' ? theirs : ours;
 }
 
 function stage(n, file) {
@@ -89,6 +108,7 @@ function stage(n, file) {
 }
 
 function mergeContentFile(file) {
+    clashes = [];
     const [base, ours, theirs] = [1, 2, 3].map(n => stage(n, file));
     if (ours === null || theirs === null) throw new Error('deleted on one side, changed on the other');
     let merged;
@@ -106,6 +126,8 @@ function mergeContentFile(file) {
         const body = merge3(b.body, o.body, t.body, ' description');
         merged = matter.stringify(body, data);
     }
+    if (clashes.length && !PREFER) throw new Error(`both sides changed the same thing:\n      ${clashes.join('\n      ')}`);
+    if (clashes.length) console.log(`${file}: kept ${PREFER === 'github' ? "GitHub's" : "this Mac's"} version of ${clashes.length} clashing field(s).`);
     fs.writeFileSync(path.join(ROOT, file), merged);
     git('add', '--', file);
 }
@@ -158,6 +180,7 @@ function main() {
         if (unresolved.length) {
             tryGit('merge', '--abort');
             console.error(`Real conflict, nothing changed:\n  ${unresolved.join('\n  ')}`);
+            console.error('\nTo settle the fields above, run this again with --prefer=github (keep GitHub\'s values) or --prefer=mine (keep this Mac\'s). Every other edit on both sides is combined either way.');
             return 2;
         }
         git('commit', '--no-edit', '-q');
