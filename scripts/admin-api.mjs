@@ -490,7 +490,7 @@ export function createAdminApi(ROOT) {
 
     function keychainRead() {
         return new Promise(resolve => {
-            execFile('security', ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT, '-w'], (error, stdout) => {
+            execFile('security', ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT, '-w'], { timeout: 15000 }, (error, stdout) => {
                 resolve(error ? null : stdout.trim() || null);
             });
         });
@@ -499,10 +499,17 @@ export function createAdminApi(ROOT) {
     function keychainWrite(token) {
         return new Promise((resolve, reject) => {
             // -U updates an existing entry; a trailing bare -w makes
-            // `security` read the password (typed twice) from stdin.
-            const child = spawn('security', ['add-generic-password', '-U', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT, '-w'], { stdio: ['pipe', 'ignore', 'ignore'] });
+            // `security` read the password (typed twice) from stdin. It
+            // prefers the terminal over stdin when there is one, and the
+            // Content Manager runs in Terminal, so it would sit waiting for
+            // typing there forever: `detached` gives it no terminal.
+            const child = spawn('security', ['add-generic-password', '-U', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT, '-w'], { stdio: ['pipe', 'ignore', 'ignore'], detached: true });
+            const timer = setTimeout(() => child.kill(), 15000);
             child.on('error', reject);
-            child.on('close', code => (code === 0 ? resolve() : reject(new Error('Couldn’t save the key to the Mac’s Keychain.'))));
+            child.on('close', code => {
+                clearTimeout(timer);
+                code === 0 ? resolve() : reject(new Error('Couldn’t save the key to the Mac’s Keychain.'));
+            });
             child.stdin.end(`${token}\n${token}\n`);
         });
     }
@@ -526,7 +533,14 @@ export function createAdminApi(ROOT) {
     async function goatcounter(endpoint, params, token) {
         const url = new URL(`${GOATCOUNTER_SITE}/api/v0${endpoint}`);
         Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, String(v)));
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+        let res;
+        try {
+            res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15000) });
+        } catch {
+            const error = new Error('Couldn’t reach GoatCounter. Check the internet connection and try again.');
+            error.status = 502;
+            throw error;
+        }
         if (res.status === 401 || res.status === 403) {
             const error = new Error('GoatCounter didn’t accept the API key. Check it has the “Read statistics” permission, or paste a new one.');
             error.status = 401;
