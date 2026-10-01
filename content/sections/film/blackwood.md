@@ -3,8 +3,8 @@ title: Blackwood
 order: 5
 cardLabel: '2019'
 cardSummary: >-
-  Sound Designer. Dir. Kalu Oji Selected — BFI London Film Festival 2019,
-  Atlanta Film Festival 2019
+  Sound Designer. Dir. Kalu Oji Selected. — BFI London Film Festival, Atlanta
+  Film Festival
 link: 'https://vimeo.com/1104638065?share=copy&fl=cl&fe=ci'
 embeds: []
 details:
@@ -14,6 +14,10 @@ details:
     value: Kalu Oji
   - label: Year
     value: '2019'
+  - label: Selected
+    value: >-
+      BFI London Film Festival, Atlanta Film Festival, Chicago International
+      Film Festival
 images:
   - images/uploads/crop-9.jpg
 ---
