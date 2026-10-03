@@ -21,8 +21,8 @@
         {
           "key": "broadcast",
           "title": "Broadcast",
-          "subtitle": "",
-          "showSubtitle": false
+          "subtitle": "Engineering live broadcast & Podcast edits",
+          "showSubtitle": true
         },
         {
           "key": "live",
