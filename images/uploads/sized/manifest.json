@@ -35,11 +35,6 @@
       "1400": "images/uploads/sized/crop-16-1400.jpg"
     }
   },
-  "crop-18.jpg": {
-    "width": 640,
-    "height": 480,
-    "variants": {}
-  },
   "crop-19.jpg": {
     "width": 1292,
     "height": 969,
@@ -219,22 +214,6 @@
       "800": "images/uploads/sized/crop-5-800.jpg"
     }
   },
-  "crop-50.jpg": {
-    "width": 1821,
-    "height": 1366,
-    "variants": {
-      "800": "images/uploads/sized/crop-50-800.jpg",
-      "1400": "images/uploads/sized/crop-50-1400.jpg"
-    }
-  },
-  "crop-51.jpg": {
-    "width": 1868,
-    "height": 1401,
-    "variants": {
-      "800": "images/uploads/sized/crop-51-800.jpg",
-      "1400": "images/uploads/sized/crop-51-1400.jpg"
-    }
-  },
   "crop-52.jpg": {
     "width": 2000,
     "height": 1500,
@@ -366,6 +345,38 @@
     "width": 447,
     "height": 335,
     "variants": {}
+  },
+  "crop-75.jpg": {
+    "width": 2000,
+    "height": 1500,
+    "variants": {
+      "800": "images/uploads/sized/crop-75-800.jpg",
+      "1400": "images/uploads/sized/crop-75-1400.jpg"
+    }
+  },
+  "crop-76.jpg": {
+    "width": 1868,
+    "height": 1401,
+    "variants": {
+      "800": "images/uploads/sized/crop-76-800.jpg",
+      "1400": "images/uploads/sized/crop-76-1400.jpg"
+    }
+  },
+  "crop-77.jpg": {
+    "width": 1821,
+    "height": 1366,
+    "variants": {
+      "800": "images/uploads/sized/crop-77-800.jpg",
+      "1400": "images/uploads/sized/crop-77-1400.jpg"
+    }
+  },
+  "crop-78.jpg": {
+    "width": 1821,
+    "height": 1366,
+    "variants": {
+      "800": "images/uploads/sized/crop-78-800.jpg",
+      "1400": "images/uploads/sized/crop-78-1400.jpg"
+    }
   },
   "crop-8.jpg": {
     "width": 959,
