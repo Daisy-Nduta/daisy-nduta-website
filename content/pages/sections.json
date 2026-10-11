@@ -13,15 +13,15 @@
       "cardImage": "images/uploads/crop-4.jpg",
       "groups": [
         {
-          "key": "live",
-          "title": "Live",
-          "subtitle": "Live sound engineering and recording for artists, showcases, and performances.",
-          "showSubtitle": true
-        },
-        {
           "key": "film",
           "title": "Film",
           "subtitle": "Location sound recording and post-production sound design for film and visual projects.",
+          "showSubtitle": true
+        },
+        {
+          "key": "live",
+          "title": "Live",
+          "subtitle": "Live sound engineering and recording for artists, showcases, and performances.",
           "showSubtitle": true
         },
         {
