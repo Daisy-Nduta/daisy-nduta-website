@@ -13,6 +13,12 @@
       "cardImage": "images/uploads/crop-4.jpg",
       "groups": [
         {
+          "key": "live",
+          "title": "Live",
+          "subtitle": "Live sound engineering and recording for artists, showcases, and performances.",
+          "showSubtitle": true
+        },
+        {
           "key": "film",
           "title": "Film",
           "subtitle": "Location sound recording and post-production sound design for film and visual projects.",
@@ -22,12 +28,6 @@
           "key": "broadcast",
           "title": "Broadcast",
           "subtitle": "Engineering live broadcast & Podcast edits",
-          "showSubtitle": true
-        },
-        {
-          "key": "live",
-          "title": "Live",
-          "subtitle": "Live sound engineering and recording for artists, showcases, and performances.",
           "showSubtitle": true
         },
         {
@@ -118,6 +118,12 @@
           "key": "work",
           "title": "Sound Art",
           "subtitle": "Experimental audio work made as art in its own right, outside of a show or broadcast.",
+          "showSubtitle": true
+        },
+        {
+          "key": "location-recording-2",
+          "title": "Location recording",
+          "subtitle": "",
           "showSubtitle": true
         }
       ]
