@@ -472,7 +472,7 @@ function itemPage(item) {
     return (
         head(
             `${item.title} — Daisy Nduta`,
-            describe(item.copy, item.cardSummary ? `${item.title} — ${item.cardSummary}` : `${item.title} — ${section.breadcrumb} — Daisy Nduta.`),
+            describe(plainMarkup(item.copy), item.cardSummary ? `${item.title} — ${item.cardSummary}` : `${item.title} — ${section.breadcrumb} — Daisy Nduta.`),
             `${item.slug}.html`,
             (item.images || [])[0]
         ) +
@@ -541,7 +541,7 @@ function projectParagraphs(text) {
         .split(/\n+/)
         .map(p => p.trim())
         .filter(Boolean)
-        .map(p => `        <p>${escapeHtml(p)}</p>`)
+        .map(p => `        <p>${inlineMarkup(p)}</p>`)
         .join('\n');
 }
 
@@ -552,6 +552,51 @@ function externalAttrs(url) {
     return /^https?:\/\//i.test(String(url ?? '').trim())
         ? ' target="_blank" rel="noopener noreferrer"'
         : '';
+}
+
+// Only ordinary web, email and phone links (or this site's own pages) become
+// real links. Anything else, e.g. a javascript: URL, stays plain text. A bare
+// "www.example.org" or "example.org" gets https:// added, since that's how
+// people usually copy an address. Must match safeHref() in admin/app.js.
+function safeHref(rawUrl) {
+    const url = String(rawUrl ?? '').trim();
+    if (/^(https?:\/\/|mailto:|tel:)\S+$/i.test(url)) return url;
+    if (/^[\w-]+\.html(#\S*)?$/i.test(url)) return url;
+    if (/^[\w-]+(\.[\w-]+)+([/?#]\S*)?$/.test(url)) return `https://${url}`;
+    return null;
+}
+
+// Highlights and links the client adds to body copy from the CMS, stored as
+// plain text: ==highlighted words== and [linked words](https://...). Plain
+// text keeps the JSON clean and safe to merge (see scripts/sync.mjs), and
+// everything is escaped here, so no client text ever reaches the page as raw
+// HTML. Must match inlineMarkup() in admin/app.js, which draws the preview.
+const INLINE_MARKUP = /==([\s\S]+?)==|\[([^\[\]]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g;
+function inlineMarkup(rawText) {
+    const text = String(rawText ?? '');
+    let html = '';
+    let last = 0;
+    for (const match of text.matchAll(INLINE_MARKUP)) {
+        html += escapeHtml(text.slice(last, match.index));
+        last = match.index + match[0].length;
+        if (match[1] !== undefined) {
+            html += `<span class="accent">${inlineMarkup(match[1])}</span>`;
+            continue;
+        }
+        const href = safeHref(match[3]);
+        html += href
+            ? `<a class="copy-link" href="${escapeHtml(href)}"${externalAttrs(href)}>${inlineMarkup(match[2])}</a>`
+            : inlineMarkup(match[2]);
+    }
+    return html + escapeHtml(text.slice(last));
+}
+
+// The same text with the markers removed, for places that must stay plain,
+// like the description shown in link previews and search results.
+function plainMarkup(rawText) {
+    return String(rawText ?? '').replace(INLINE_MARKUP, (_, highlighted, linked) =>
+        plainMarkup(highlighted !== undefined ? highlighted : linked)
+    );
 }
 
 function paragraphsFromBody(text) {
@@ -838,27 +883,16 @@ ${entryDots}
 
     // ---- about.html ----
     const about = readJson('pages/about.json');
-    // One curated phrase (or, for the paragraph that lists her four
-    // practice areas, all four) picked by hand per paragraph -- not every
-    // paragraph needs one, see AGENTS.md. Indexed by position, not content,
-    // so it silently goes fully out of sync if a paragraph is ever added or
-    // removed above it -- exactly what happened when the client deleted the
-    // original opening paragraph (2026-09-22): every remaining paragraph
-    // shifted up one slot, so every phrase here was being checked against
-    // the wrong paragraph and nothing accented at all. Re-synced 2026-09-23
-    // to the current 3-paragraph structure; the old opening paragraph's
-    // 'sound-first' accent has no home anymore and was dropped.
-    const ABOUT_PARAGRAPH_ACCENTS = [
-        ['cultural producer'],
-        ['Sound', 'Film', 'Production & Curation', 'Cultural Projects'],
-        []
-    ];
+    // Highlights and links are chosen by the client in the CMS (see
+    // inlineMarkup()). This replaced a hardcoded per-paragraph phrase list.
     const paragraphs = about.paragraphs
-        .map((p, i) => `        <p class="copy">${applyAccents(p, ABOUT_PARAGRAPH_ACCENTS[i])}</p>`)
+        .map(p => `        <p class="copy">${inlineMarkup(p)}</p>`)
         .join('\n');
     const portraitFigure = about.portraitImage
         ? `<figure class="image-panel"><img ${imgAttrs(about.portraitImage, 'Daisy Nduta', IMAGE_SIZES.portrait, { lazy: false })}></figure>`
-        : `<figure class="image-panel"><p>${escapeHtml(about.portraitPlaceholder)}</p></figure>`;
+        : about.portraitPlaceholder
+          ? `<figure class="image-panel"><p>${escapeHtml(about.portraitPlaceholder)}</p></figure>`
+          : ''; // No photo and no placeholder text: no empty box, the bio takes the full width.
     const awardsRows = about.awards.map(a => `        <li><span>${escapeHtml(a.year)}</span><span>${escapeHtml(a.text)}</span></li>`).join('\n');
     const residencyRows = about.residencies.map(r => `        <li><span>${escapeHtml(r.year)}</span><span>${escapeHtml(r.text)}</span></li>`).join('\n');
     // Client-authored: a centered, wrapping cluster of names, not a
@@ -882,8 +916,8 @@ ${entryDots}
   <main class="page">
     <p class="eyebrow">${escapeHtml(about.eyebrow)}</p>
     <h1>${escapeHtml(about.heading)}</h1>
-    <div class="intro-grid">
-      <div>
+    <div class="intro-grid intro-grid--about${portraitFigure ? '' : ' intro-grid--text-only'}">
+      <div class="about-bio">
 ${paragraphs}
       </div>
       ${portraitFigure}

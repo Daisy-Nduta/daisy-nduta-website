@@ -245,6 +245,34 @@ body {
 .confirm-box p { font-size: 14px; line-height: 1.4; margin: 0 0 20px; }
 .confirm-box__actions { display: flex; gap: 10px; justify-content: flex-end; }
 
+.para-row { margin-bottom: 18px; }
+.para-row__tools { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.para-row__tools .detail-row__remove { margin-left: auto; }
+.para-preview {
+    margin: 6px 0 0;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: rgba(32, 30, 31, .04);
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(32, 30, 31, .68);
+}
+.para-preview:empty { display: none; }
+.para-preview p { margin: 0; }
+.para-preview p + p { margin-top: .8em; }
+.para-preview__accent, .para-preview__link { color: #a22106; }
+.para-preview__link { text-decoration: underline; text-underline-offset: .18em; }
+.link-box p { margin-bottom: 12px; overflow-wrap: anywhere; }
+.link-box__url {
+    width: 100%;
+    margin-bottom: 16px;
+    padding: 9px 11px;
+    border: 1px solid rgba(32, 30, 31, .25);
+    border-radius: 6px;
+    font: inherit;
+}
+.link-box__error { margin-top: -6px; color: #b23b3b; font-size: 13px; }
+
 .crop-box { width: auto; }
 .crop-stage {
     position: relative;

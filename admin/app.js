@@ -62,6 +62,215 @@
   }
 
   // ---------------------------------------------------------------------
+  // Highlights and links in body copy, stored as plain text:
+  // ==highlighted words== and [linked words](https://...). safeHref() and
+  // inlineMarkup() must match the functions of the same name in
+  // scripts/build.mjs, which render the real page; these draw the preview.
+  const INLINE_MARKUP_SOURCE = '==([\\s\\S]+?)==|\\[([^\\[\\]]+)\\]\\(((?:[^()\\s]|\\([^()\\s]*\\))+)\\)';
+
+  function safeHref(rawUrl) {
+    const url = String(rawUrl ?? '').trim();
+    if (/^(https?:\/\/|mailto:|tel:)\S+$/i.test(url)) return url;
+    if (/^[\w-]+\.html(#\S*)?$/i.test(url)) return url;
+    if (/^[\w-]+(\.[\w-]+)+([/?#]\S*)?$/.test(url)) return `https://${url}`;
+    return null;
+  }
+
+  function markupTokens(text) {
+    return Array.from(String(text ?? '').matchAll(new RegExp(INLINE_MARKUP_SOURCE, 'g'))).map(m => ({
+      start: m.index,
+      end: m.index + m[0].length,
+      isLink: m[1] === undefined,
+      inner: m[1] !== undefined ? m[1] : m[2],
+      url: m[3] || ''
+    }));
+  }
+
+  function inlineMarkup(rawText) {
+    const text = String(rawText ?? '');
+    let html = '';
+    let last = 0;
+    markupTokens(text).forEach(token => {
+      html += escapeHtml(text.slice(last, token.start));
+      last = token.end;
+      if (!token.isLink) {
+        html += `<span class="para-preview__accent">${inlineMarkup(token.inner)}</span>`;
+        return;
+      }
+      const href = safeHref(token.url);
+      html += href
+        ? `<a class="para-preview__link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${inlineMarkup(token.inner)}</a>`
+        : inlineMarkup(token.inner);
+    });
+    return html + escapeHtml(text.slice(last));
+  }
+
+  // The tokens a selection touches. A bare cursor counts if it's inside one.
+  function tokensTouching(text, start, end) {
+    return markupTokens(text).filter(t => t.start < end && t.end > start || (start === end && t.start <= start && t.end >= start));
+  }
+
+  // Replaces start..end, first turning any markup the range touches back
+  // into plain words, so markers can never end up half-overlapping.
+  function flattenRange(text, start, end) {
+    const touched = tokensTouching(text, start, end);
+    const from = Math.min(start, ...touched.map(t => t.start));
+    const to = Math.max(end, ...touched.map(t => t.end));
+    let plain = '';
+    let last = from;
+    touched.forEach(t => {
+      plain += text.slice(last, t.start) + t.inner;
+      last = t.end;
+    });
+    plain += text.slice(last, to);
+    return { from, to, plain };
+  }
+
+  // Double-clicking a word can also select the space after it. Keep spaces
+  // outside the markers.
+  function trimSelection(text, start, end) {
+    while (start < end && /\s/.test(text[start])) start += 1;
+    while (end > start && /\s/.test(text[end - 1])) end -= 1;
+    return [start, end];
+  }
+
+  // An in-page box rather than the native prompt(), for the same reason as
+  // confirmDialog(). Resolves to the link address, or null if cancelled.
+  function linkDialog(words, currentUrl) {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.className = 'confirm-overlay';
+      overlay.innerHTML = `
+        <form class="confirm-box link-box">
+          <p>Link <strong>${escapeHtml(words)}</strong> to:</p>
+          <input type="text" class="link-box__url" placeholder="https://…" autocomplete="off" autocapitalize="off" spellcheck="false" value="${escapeHtml(currentUrl)}">
+          <p class="link-box__error" hidden>That doesn't look like a web address. Try copying it from the top of your browser.</p>
+          <div class="confirm-box__actions">
+            <button type="button" class="btn" data-action="cancel">Cancel</button>
+            <button type="submit" class="btn btn--primary">Add link</button>
+          </div>
+        </form>`;
+      const close = value => {
+        overlay.remove();
+        resolve(value);
+      };
+      const input = overlay.querySelector('.link-box__url');
+      overlay.addEventListener('click', e => {
+        if (e.target === overlay || e.target.dataset.action === 'cancel') close(null);
+      });
+      overlay.addEventListener('keydown', e => {
+        if (e.key === 'Escape') close(null);
+      });
+      overlay.querySelector('form').addEventListener('submit', e => {
+        e.preventDefault();
+        const href = safeHref(input.value);
+        if (href) close(href);
+        else overlay.querySelector('.link-box__error').hidden = false;
+      });
+      document.body.appendChild(overlay);
+      input.focus();
+      input.select();
+    });
+  }
+
+  function markupToolsHtml(extra = '') {
+    return `<div class="para-row__tools">
+        <button type="button" class="btn btn--small" data-para="highlight">Highlight</button>
+        <button type="button" class="btn btn--small" data-para="link">Link</button>
+        <button type="button" class="btn btn--small" data-para="clear">Clear</button>
+        ${extra}
+      </div>`;
+  }
+
+  function paraRowHtml(text) {
+    return `<div class="para-row">
+      ${markupToolsHtml('<button type="button" class="detail-row__remove" data-para="remove" aria-label="Remove paragraph">&times;</button>')}
+      <textarea class="para-text">${escapeHtml(text)}</textarea>
+      <div class="para-preview"></div>
+    </div>`;
+  }
+
+  // A project description is one text box, and every line in it becomes its
+  // own paragraph on the page (projectParagraphs() in scripts/build.mjs), so
+  // its preview splits the same way (data-lines).
+  function refreshParaRow(textarea) {
+    const row = textarea.closest('.para-row');
+    const parts = row.dataset.lines !== undefined ? textarea.value.split(/\n+/) : [textarea.value];
+    row.querySelector('.para-preview').innerHTML = parts
+      .map(part => part.trim())
+      .filter(Boolean)
+      .map(part => `<p>${inlineMarkup(part)}</p>`)
+      .join('');
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight + 2}px`;
+  }
+
+  // The buttons, preview and box-sizing for every .para-row inside container.
+  function wireParaRows(container) {
+    // Keep the selection in the text box when a button is pressed.
+    container.addEventListener('mousedown', e => {
+      if (e.target.closest('[data-para]')) e.preventDefault();
+    });
+    container.addEventListener('click', e => {
+      const button = e.target.closest('[data-para]');
+      if (!button) return;
+      const row = button.closest('.para-row');
+      if (button.dataset.para === 'remove') row.remove();
+      else applyParaAction(button.dataset.para, row.querySelector('textarea'));
+    });
+    container.addEventListener('input', e => {
+      if (e.target.closest('.para-row') && e.target.tagName === 'TEXTAREA') refreshParaRow(e.target);
+    });
+    container.querySelectorAll('.para-row textarea').forEach(refreshParaRow);
+  }
+
+  async function applyParaAction(action, textarea) {
+    const text = textarea.value;
+    const [start, end] = trimSelection(text, textarea.selectionStart, textarea.selectionEnd);
+    const touched = tokensTouching(text, start, end);
+    if (start === end && !touched.length) {
+      toast('Select the words first, then press the button.', 'error');
+      textarea.focus();
+      return;
+    }
+    // Don't silently lose a link's address: links are already coloured.
+    if (action === 'highlight' && touched.some(t => t.isLink)) {
+      toast('Those words have a link, which already shows in colour. Press Clear first to remove the link.', 'error');
+      textarea.focus();
+      return;
+    }
+    const { from, to, plain } = flattenRange(text, start, end);
+    // Each line is its own paragraph on the page, and a marker can't span two.
+    if (action !== 'clear' && /\n/.test(plain)) {
+      toast('Select words within one paragraph at a time.', 'error');
+      textarea.focus();
+      return;
+    }
+    let replacement = plain;
+    if (action === 'highlight') {
+      // Pressing Highlight on words that are already highlighted removes it.
+      const wasHighlighted = touched.length && touched.every(t => !t.isLink);
+      if (!wasHighlighted) replacement = `==${plain}==`;
+    } else if (action === 'link') {
+      if (/[\[\]]/.test(plain)) {
+        toast("Words with square brackets can't be linked.", 'error');
+        return;
+      }
+      const existing = touched.find(t => t.isLink);
+      const url = await linkDialog(plain, existing ? existing.url : '');
+      if (!url) {
+        textarea.focus();
+        return;
+      }
+      replacement = `[${plain}](${url})`;
+    }
+    textarea.value = text.slice(0, from) + replacement + text.slice(to);
+    textarea.focus();
+    textarea.setSelectionRange(from, from + replacement.length);
+    refreshParaRow(textarea);
+  }
+
+  // ---------------------------------------------------------------------
   // Image crop -- every "Upload image" button runs the chosen photo through
   // this before it ever reaches /api/media, so the person controls what
   // part of the photo fills the (always 4:3) card/thumbnail slot instead of
@@ -593,7 +802,12 @@
 
       <div class="field">
         <label class="field__label">Description</label>
-        <textarea id="f-body">${escapeHtml(data.body)}</textarea>
+        <p style="font-size:13px;color:rgba(32,30,31,.6);margin-bottom:8px;">To highlight words or link them to a website, select them and press Highlight or Link. To undo, select them again and press Clear. The preview shows how it will look.</p>
+        <div class="para-row" data-lines id="body-row">
+          ${markupToolsHtml()}
+          <textarea id="f-body">${escapeHtml(data.body)}</textarea>
+          <div class="para-preview"></div>
+        </div>
       </div>
 
       ${
@@ -646,6 +860,7 @@
     });
 
     wireImagesField(data.images);
+    wireParaRows(document.getElementById('body-row'));
 
     document.getElementById('save-btn').addEventListener('click', () => saveItem(key, isNew ? null : data.slug, collection));
     if (!isNew) {
@@ -1325,7 +1540,8 @@
 
       <div class="field">
         <label class="field__label">Bio paragraphs</label>
-        <div id="para-rows">${data.paragraphs.map((p, i) => `<div class="detail-row" data-index="${i}"><textarea class="para-text" style="flex:1">${escapeHtml(p)}</textarea><button type="button" class="detail-row__remove">&times;</button></div>`).join('')}</div>
+        <p style="font-size:13px;color:rgba(32,30,31,.6);margin-bottom:8px;">To highlight words or link them to a website, select them and press Highlight or Link. To undo, select them again and press Clear. The preview under each paragraph shows how it will look.</p>
+        <div id="para-rows">${data.paragraphs.map(paraRowHtml).join('')}</div>
         <button type="button" class="btn btn--small" id="para-add">+ Add paragraph</button>
       </div>
 
@@ -1370,11 +1586,9 @@
     `;
 
     document.getElementById('para-add').addEventListener('click', () => {
-      document.getElementById('para-rows').insertAdjacentHTML('beforeend', `<div class="detail-row"><textarea class="para-text" style="flex:1"></textarea><button type="button" class="detail-row__remove">&times;</button></div>`);
+      document.getElementById('para-rows').insertAdjacentHTML('beforeend', paraRowHtml(''));
     });
-    document.getElementById('para-rows').addEventListener('click', e => {
-      if (e.target.classList.contains('detail-row__remove')) e.target.closest('.detail-row').remove();
-    });
+    wireParaRows(document.getElementById('para-rows'));
     wireListField('awards', [{ key: 'year', placeholder: 'Year' }, { key: 'text', placeholder: 'Award' }], { year: '', text: '' });
     wireListField('residencies', [{ key: 'year', placeholder: 'Year' }, { key: 'text', placeholder: 'Program' }], { year: '', text: '' });
     wireListField('clients', [{ key: 'name', placeholder: 'Client name' }, { key: 'url', placeholder: 'Link (optional) — https://…' }], { name: '', url: '' });
