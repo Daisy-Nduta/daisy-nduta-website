@@ -131,12 +131,16 @@ h1.hero-lede {
 /* About's bio is several long paragraphs, not a short lede, so it reads at
    the same size as a project description (client request: at the display
    size it overpowered her photo). The tall column also used to stretch the
-   photo slot, cropping her photo hard, so the photo now keeps its own shape
-   and stays in view beside the text on desktop. */
+   photo slot, cropping her photo hard, so photos now keep their own shape.
+   Several stack down the column beside the text; a single one stays in view
+   as the text scrolls on desktop (a stack can be taller than the screen, so
+   it just scrolls with the page). */
 .about-bio .copy { max-width: 620px; font-size: 18px; line-height: 1.55; }
 .about-bio .copy + .copy { margin-top: 1em; }
 .intro-grid--about { align-items: start; }
-.intro-grid--about .image-panel { position: sticky; top: 32px; min-height: 0; margin: 0; }
+.about-photos { display: grid; gap: 24px; }
+.about-photos--single { position: sticky; top: 32px; }
+.intro-grid--about .image-panel { min-height: 0; margin: 0; }
 .intro-grid--about .image-panel img { height: auto; min-height: 0; }
 .intro-grid--text-only { grid-template-columns: minmax(0, 1fr); }
 .intro-grid--text-only .about-bio .copy { max-width: 780px; }
@@ -495,7 +499,7 @@ a.client-cloud__item:hover { border-bottom-color: currentColor; }
     .home-wordmark__tagline { margin: 16px auto 40px; }
     .intro-grid, .item-grid { grid-template-columns: 1fr; gap: 24px; }
     .image-panel, .image-panel img { min-height: 250px; }
-    .intro-grid--about .image-panel { position: static; }
+    .about-photos--single { position: static; }
     .image-gallery { grid-template-columns: minmax(0, 1fr); height: auto; }
     .image-gallery__main { height: auto; aspect-ratio: 4 / 3; }
     .image-gallery__thumbs { flex-direction: row; overflow-x: auto; overflow-y: hidden; }

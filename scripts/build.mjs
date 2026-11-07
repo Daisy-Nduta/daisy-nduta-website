@@ -888,11 +888,18 @@ ${entryDots}
     const paragraphs = about.paragraphs
         .map(p => `        <p class="copy">${inlineMarkup(p)}</p>`)
         .join('\n');
-    const portraitFigure = about.portraitImage
-        ? `<figure class="image-panel"><img ${imgAttrs(about.portraitImage, 'Daisy Nduta', IMAGE_SIZES.portrait, { lazy: false })}></figure>`
+    // Photos stack beside the bio, in the order they're listed. With none and
+    // no placeholder text there's no empty box; the bio takes the full width.
+    const portraitImages = (about.portraitImages || []).filter(Boolean);
+    const portraitFigure = portraitImages.length
+        ? `<div class="about-photos${portraitImages.length === 1 ? ' about-photos--single' : ''}">
+        ${portraitImages
+            .map((src, i) => `<figure class="image-panel"><img ${imgAttrs(src, 'Daisy Nduta', IMAGE_SIZES.portrait, { lazy: i > 0 })}></figure>`)
+            .join('\n        ')}
+      </div>`
         : about.portraitPlaceholder
-          ? `<figure class="image-panel"><p>${escapeHtml(about.portraitPlaceholder)}</p></figure>`
-          : ''; // No photo and no placeholder text: no empty box, the bio takes the full width.
+          ? `<div class="about-photos"><figure class="image-panel"><p>${escapeHtml(about.portraitPlaceholder)}</p></figure></div>`
+          : '';
     const awardsRows = about.awards.map(a => `        <li><span>${escapeHtml(a.year)}</span><span>${escapeHtml(a.text)}</span></li>`).join('\n');
     const residencyRows = about.residencies.map(r => `        <li><span>${escapeHtml(r.year)}</span><span>${escapeHtml(r.text)}</span></li>`).join('\n');
     // Client-authored: a centered, wrapping cluster of names, not a
@@ -910,7 +917,7 @@ ${entryDots}
 
     write(
         'about.html',
-        head(`About — Daisy Nduta`, 'About Daisy Nduta — sound designer, location recordist, and cultural producer.', 'about.html', about.portraitImage || homeCardImage('about')) +
+        head(`About — Daisy Nduta`, 'About Daisy Nduta — sound designer, location recordist, and cultural producer.', 'about.html', portraitImages[0] || homeCardImage('about')) +
             `<body>
   ${header('about.html')}
   <main class="page">

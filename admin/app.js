@@ -682,10 +682,10 @@
   // only one form is ever open at a time in this app.
   // ---------------------------------------------------------------------
 
-  function imagesFieldHtml() {
+  function imagesFieldHtml(label = 'Images (shown as a scrolling row on the page)') {
     return `
       <div class="field">
-        <label class="field__label">Images (shown as a scrolling row on the page)</label>
+        <label class="field__label">${escapeHtml(label)}</label>
         <div class="image-gallery-field" id="images-list"></div>
         <button type="button" class="btn btn--small" id="add-image-btn">+ Add image</button>
         <input type="file" id="image-file-input" accept="image/*" style="display:none">
@@ -1545,19 +1545,8 @@
         <button type="button" class="btn btn--small" id="para-add">+ Add paragraph</button>
       </div>
 
-      <div class="field">
-        <label class="field__label">Portrait photo</label>
-        <div class="image-field">
-          <div class="image-field__preview" id="image-preview" style="${data.portraitImage ? `background-image:url('/${data.portraitImage}')` : ''}"></div>
-          <div>
-            <button type="button" class="btn btn--small" id="upload-btn">Upload image</button>
-            <button type="button" class="btn btn--small" id="remove-image-btn" ${data.portraitImage ? '' : 'style="display:none"'}>Remove image</button>
-            <input type="file" id="file-input" accept="image/*" style="display:none">
-          </div>
-        </div>
-        <input type="hidden" id="f-portraitImage" value="${escapeHtml(data.portraitImage)}">
-      </div>
-      <div class="field"><label class="field__label">Placeholder text shown until a portrait photo is set</label><input type="text" id="f-portraitPlaceholder" value="${escapeHtml(data.portraitPlaceholder)}"></div>
+      ${imagesFieldHtml('Photos (stacked beside the bio, in this order)')}
+      <div class="field"><label class="field__label">Placeholder text shown until a photo is added</label><input type="text" id="f-portraitPlaceholder" value="${escapeHtml(data.portraitPlaceholder)}"></div>
 
       <div class="field"><label class="field__label">Awards — small label</label><input type="text" id="f-awardsLabel" value="${escapeHtml(data.awardsLabel)}"></div>
       <div class="field"><label class="field__label">Awards — heading</label><input type="text" id="f-awardsHeading" value="${escapeHtml(data.awardsHeading)}"></div>
@@ -1593,39 +1582,14 @@
     wireListField('residencies', [{ key: 'year', placeholder: 'Year' }, { key: 'text', placeholder: 'Program' }], { year: '', text: '' });
     wireListField('clients', [{ key: 'name', placeholder: 'Client name' }, { key: 'url', placeholder: 'Link (optional) — https://…' }], { name: '', url: '' });
 
-    document.getElementById('upload-btn').addEventListener('click', () => document.getElementById('file-input').click());
-    document.getElementById('file-input').addEventListener('change', async e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const cropped = await openCropModal(file);
-      e.target.value = '';
-      if (!cropped) return;
-      const formData = new FormData();
-      formData.append('file', cropped, cropped.name || 'crop.jpg');
-      try {
-        const res = await fetch('/api/media', { method: 'POST', body: formData });
-        const uploaded = await res.json();
-        if (!res.ok) throw new Error(uploaded.error || 'Upload failed');
-        document.getElementById('f-portraitImage').value = uploaded.path;
-        document.getElementById('image-preview').style.backgroundImage = `url('/${uploaded.path}')`;
-        document.getElementById('remove-image-btn').style.display = '';
-        toast('Image uploaded.', 'ok');
-      } catch (error) {
-        toast(error.message, 'error');
-      }
-    });
-    document.getElementById('remove-image-btn').addEventListener('click', () => {
-      document.getElementById('f-portraitImage').value = '';
-      document.getElementById('image-preview').style.backgroundImage = '';
-      document.getElementById('remove-image-btn').style.display = 'none';
-    });
+    wireImagesField(data.portraitImages);
 
     document.getElementById('save-btn').addEventListener('click', async () => {
       const payload = {
         eyebrow: document.getElementById('f-eyebrow').value,
         heading: document.getElementById('f-heading').value,
         paragraphs: Array.from(document.querySelectorAll('.para-text')).map(t => t.value),
-        portraitImage: document.getElementById('f-portraitImage').value,
+        portraitImages: [...state.currentImages],
         portraitPlaceholder: document.getElementById('f-portraitPlaceholder').value,
         awardsLabel: document.getElementById('f-awardsLabel').value,
         awardsHeading: document.getElementById('f-awardsHeading').value,
